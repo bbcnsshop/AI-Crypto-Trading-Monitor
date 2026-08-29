@@ -56,6 +56,33 @@ VALUE_AREA_PCT = 0.70
 # Display mode: 'standard' | 'compact' | 'verbose'
 DISPLAY_MODE = "standard"
 
+# ============================================================
+# AI Trigger Configuration
+# ============================================================
+# Smart Trigger: ส่ง AI เฉพาะเมื่อมีสัญญาณสำคัญ (ประหยัด API)
+TRIGGER_RSI_EXTREME = True        # RSI < 30 หรือ > 70
+TRIGGER_PATTERN = True            # มี Bullish/Bearish pattern
+TRIGGER_MACD_CROSS = True         # MACD ตัด Signal line
+TRIGGER_NEAR_LEVEL = True         # ใกล้ Fib/VPVR ±0.5%
+TRIGGER_HIGH_VOLATILITY = True    # ATR > 1.5% ของราคา
+TRIGGER_BIG_MOVE = False          # ราคาเปลี่ยน > 1% (conservative)
+
+# Cooldown: จำกัดจำนวนครั้งที่ส่ง AI
+AI_COOLDOWN_MAX_PER_HOUR = 3      # ส่งได้สูงสุด 3 ครั้ง/ชั่วโมง
+AI_COOLDOWN_SECONDS = 300         # ห่างกันอย่างน้อย 5 นาที (300s)
+
+# Manual Trigger
+ENABLE_MANUAL_TRIGGER = True      # เปิดให้กดคีย์เพื่อส่ง AI เอง
+MANUAL_KEY_ANALYZE = 'a'          # กด A เพื่อส่ง AI ทันที
+MANUAL_KEY_QUIT = 'q'             # กด Q เพื่อออก
+
+# Trigger Thresholds
+RSI_OVERSOLD = 30
+RSI_OVERBOUGHT = 70
+ATR_HIGH_PCT = 1.5                # ATR > 1.5% ของราคา
+LEVEL_DISTANCE_PCT = 0.5          # ใกล้ support/resistance ±0.5%
+BIG_MOVE_PCT = 1.0                # ราคาเปลี่ยน > 1%
+
 load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-chat")
@@ -448,6 +475,86 @@ def build_ai_context(data: TradingData) -> str:
     
     return "\n".join(ctx)
 
+
+# ============================================================
+# Smart Trigger Functions
+# ============================================================
+
+def check_smart_trigger(data, df) -> tuple:
+    """
+    ตรวจสอบว่าควรส่ง AI หรือไม่ (Smart Trigger)
+    Returns: (should_trigger: bool, reason: str)
+    """
+    reasons = []
+    indicators = data.indicators
+    close = data.latest_close
+
+    # 1. RSI Extreme
+    if TRIGGER_RSI_EXTREME:
+        rsi = indicators.get('rsi', 50)
+        if rsi < RSI_OVERSOLD:
+            reasons.append(f"RSI Oversold ({rsi:.1f} < {RSI_OVERSOLD})")
+        elif rsi > RSI_OVERBOUGHT:
+            reasons.append(f"RSI Overbought ({rsi:.1f} > {RSI_OVERBOUGHT})")
+
+    # 2. Pattern Detected
+    if TRIGGER_PATTERN and data.patterns:
+        bull_signals = sum(1 for k, v in data.patterns.items() if v and 'bull' in k.lower())
+        bear_signals = sum(1 for k, v in data.patterns.items() if v and 'bear' in k.lower())
+        if bull_signals > 0:
+            reasons.append(f"Bullish Pattern ({bull_signals} detected)")
+        if bear_signals > 0:
+            reasons.append(f"Bearish Pattern ({bear_signals} detected)")
+
+    # 3. MACD Crossover
+    if TRIGGER_MACD_CROSS:
+        macd_line = indicators.get('macd_line', 0)
+        macd_signal = indicators.get('macd_signal', 0)
+        if len(df) >= 2:
+            prev_macd = df['macd_line'].iloc[-2] if 'macd_line' in df else 0
+            prev_signal = df['macd_signal'].iloc[-2] if 'macd_signal' in df else 0
+            if prev_macd <= prev_signal and macd_line > macd_signal:
+                reasons.append("MACD Bullish Crossover")
+            elif prev_macd >= prev_signal and macd_line < macd_signal:
+                reasons.append("MACD Bearish Crossover")
+
+    # 4. Near Key Level
+    if TRIGGER_NEAR_LEVEL and close:
+        all_levels = []
+        if data.fibonacci:
+            for k in ['fib_382', 'fib_500', 'fib_618']:
+                if k in data.fibonacci:
+                    all_levels.append(data.fibonacci[k])
+        if data.vpvr:
+            for k in ['poc', 'vah', 'val']:
+                if k in data.vpvr:
+                    all_levels.append(data.vpvr[k])
+        for level in all_levels:
+            distance_pct = abs(close - level) / close * 100
+            if distance_pct < LEVEL_DISTANCE_PCT:
+                reasons.append(f"Near Key Level (${level:.0f}, {distance_pct:.2f}%)")
+                break
+
+    # 5. High Volatility
+    if TRIGGER_HIGH_VOLATILITY:
+        atr = indicators.get('atr', 0)
+        if atr > 0 and close > 0:
+            atr_pct = atr / close * 100
+            if atr_pct > ATR_HIGH_PCT:
+                reasons.append(f"High Volatility (ATR {atr_pct:.2f}% > {ATR_HIGH_PCT}%)")
+
+    # 6. Big Move
+    if TRIGGER_BIG_MOVE and len(df) >= 2:
+        prev_close = df['close'].iloc[-2]
+        price_change = abs(close - prev_close) / prev_close * 100
+        if price_change > BIG_MOVE_PCT:
+            reasons.append(f"Big Move ({price_change:.2f}% change)")
+
+    should_trigger = len(reasons) > 0
+    reason_str = " | ".join(reasons) if reasons else "No trigger"
+    return should_trigger, reason_str
+
+
 def call_openrouter_ai(context: str) -> str:
     """เรียก OpenRouter API"""
     if not OPENROUTER_API_KEY:
@@ -468,11 +575,65 @@ def call_openrouter_ai(context: str) -> str:
 
 
 # ============================================================
+# Cooldown Tracker
+# ============================================================
+import time as time_module
+
+class CooldownTracker:
+    """Track AI calls for cooldown"""
+    def __init__(self):
+        self.last_ai_time = 0
+        self.ai_count_this_hour = 0
+        self.hour_start = time_module.time()
+    
+    def can_send(self) -> tuple:
+        """ตรวจสอบว่าส่ง AI ได้หรือไม่"""
+        current = time_module.time()
+        # Reset counter ทุกชั่วโมง
+        if current - self.hour_start >= 3600:
+            self.ai_count_this_hour = 0
+            self.hour_start = current
+        # ตรวจสอบ cooldown วินาที
+        time_since_last = current - self.last_ai_time
+        if self.last_ai_time > 0 and time_since_last < AI_COOLDOWN_SECONDS:
+            remaining = int(AI_COOLDOWN_SECONDS - time_since_last)
+            return False, f"Cooldown ({remaining}s remaining)"
+        # ตรวจสอบจำนวนครั้ง/ชั่วโมง
+        if self.ai_count_this_hour >= AI_COOLDOWN_MAX_PER_HOUR:
+            return False, f"Hourly limit ({self.ai_count_this_hour}/{AI_COOLDOWN_MAX_PER_HOUR})"
+        return True, "OK"
+    
+    def record_send(self):
+        """บันทึกการส่ง AI"""
+        self.last_ai_time = time_module.time()
+        self.ai_count_this_hour += 1
+
+
+def should_send_ai(data, df, cooldown_tracker: CooldownTracker) -> tuple:
+    """
+    ตรวจสอบรวมว่าควรส่ง AI หรือไม่
+    Returns: (should_send: bool, reason: str, trigger_type: str)
+    """
+    # ตรวจ Cooldown ก่อน
+    can_send, cooldown_reason = cooldown_tracker.can_send()
+    if not can_send:
+        return False, cooldown_reason, "COOLDOWN"
+    # ตรวจ Smart Trigger
+    should_trigger, trigger_reason = check_smart_trigger(data, df)
+    if should_trigger:
+        return True, trigger_reason, "SMART_TRIGGER"
+    return False, "No trigger conditions", "NONE"
+
+
+# ============================================================
 
 
 # ============================================================
 # Main Process
 # ============================================================
+
+# Global cooldown tracker
+_cooldown_tracker = CooldownTracker()
 
 def run_analysis():
     """รันกระบวนการวิเคราะห์ทั้งหมด"""
@@ -507,9 +668,25 @@ def run_analysis():
         logging.info("STEP 5: คำนวณ Volume Profile (VPVR)"); console.print("[bold]Step 5:[/bold] คำนวณ Volume Profile (VPVR)...")
         data.vpvr = calculate_vpvr(df)
         
-        logging.info("STEP 6: ส่งข้อมูลให้ AI วิเคราะห์"); console.print("[bold]Step 6:[/bold] ส่งข้อมูลให้ AI วิเคราะห์...")
-        context = build_ai_context(data)
-        data.ai_analysis = call_openrouter_ai(context)
+        # ============================================================
+        # STEP 6: ตรวจสอบ Trigger ก่อนส่ง AI
+        # ============================================================
+        should_send, reason, trigger_type = should_send_ai(data, df, _cooldown_tracker)
+        
+        if should_send:
+            logging.info(f"STEP 6: ส่งข้อมูลให้ AI วิเคราะห์ | Trigger: {trigger_type} | Reason: {reason}")
+            console.print(f"[bold]Step 6:[/bold] ส่งข้อมูลให้ AI วิเคราะห์... [green]({trigger_type})[/green]")
+            console.print(f"  [dim]{reason}[/dim]")
+            context = build_ai_context(data)
+            data.ai_analysis = call_openrouter_ai(context)
+            _cooldown_tracker.record_send()
+            console.print(f"  [green]✓ AI Analyzed[/green] (Used: {_cooldown_tracker.ai_count_this_hour}/{AI_COOLDOWN_MAX_PER_HOUR} this hour)")
+        else:
+            logging.info(f"STEP 6: ข้ามการส่ง AI | Reason: {reason}")
+            console.print(f"[bold]Step 6:[/bold] [yellow]ข้าม AI (ไม่มี trigger หรือ cooldown)[/yellow]")
+            console.print(f"  [dim]Reason: {reason}[/dim]")
+            console.print(f"  [dim]Used: {_cooldown_tracker.ai_count_this_hour}/{AI_COOLDOWN_MAX_PER_HOUR} this hour[/dim]")
+            data.ai_analysis = f"[AI Skipped: {reason}]"
         
         logging.info("STEP 7: แสดงผล"); console.print("[bold]Step 7:[/bold] แสดงผล...")
         display_rich_ui_new(data, SYMBOL, TIMEFRAME, DISPLAY_MODE)

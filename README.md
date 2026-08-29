@@ -450,6 +450,53 @@ SHOOT_POS = 0.4        # body position ≤ 40% (ล่างสุด)
 ---
 
 
+## 🤖 AI Trigger System (Smart + Cooldown)
+
+โปรแกรมมีระบบ Trigger อัจฉริยะสำหรับส่งข้อมูลให้ AI วิเคราะห์ (ประหยัด API)
+
+### Smart Triggers (ค่าเริ่มต้น)
+| Trigger | Default | คำอธิบาย |
+|---------|---------|-----------|
+| RSI Extreme | ✅ ON | RSI < 30 หรือ > 70 |
+| Pattern Detected | ✅ ON | มี Bullish/Bearish pattern |
+| MACD Crossover | ✅ ON | MACD ตัด Signal line |
+| Near Key Level | ✅ ON | ใกล้ Fib/VPVR ±0.5% |
+| High Volatility | ✅ ON | ATR > 1.5% ของราคา |
+| Big Move | ❌ OFF | ราคาเปลี่ยน > 1% (conservative) |
+
+### Cooldown
+- ส่งได้สูงสุด **3 ครั้ง/ชั่วโมง**
+- ห่างกันอย่างน้อย **5 นาที**
+
+### ตัวอย่าง Output
+```
+Step 6: ส่งข้อมูลให้ AI วิเคราะห์... (SMART_TRIGGER)
+  Bullish Pattern (2 detected) | Near Key Level ($71800, 0.32%)
+  ✓ AI Analyzed (Used: 1/3 this hour)
+```
+
+หรือเมื่อไม่มี trigger:
+```
+Step 6: ข้าม AI (ไม่มี trigger หรือ cooldown)
+  Reason: No trigger conditions
+  Used: 1/3 this hour
+```
+
+### การตั้งค่า
+```python
+TRIGGER_RSI_EXTREME = True
+TRIGGER_PATTERN = True
+TRIGGER_MACD_CROSS = True
+TRIGGER_NEAR_LEVEL = True
+TRIGGER_HIGH_VOLATILITY = True
+TRIGGER_BIG_MOVE = False
+AI_COOLDOWN_MAX_PER_HOUR = 3
+AI_COOLDOWN_SECONDS = 300
+```
+
+---
+
+## 🎨 Display Modes (3 โหมดแสดงผล)
 ## 🎨 Display Modes (3 โหมดแสดงผล)
 
 โปรแกรมมีโหมดแสดงผล 3 รูปแบบให้เลือก แก้ที่ `main.py` บรรทัด 55-56:
@@ -584,7 +631,7 @@ SWING_LOOKBACK = 20
 
 ---
 
-**เวอร์ชัน:** 1.2.0
-**อัปเดตล่าสุด:** 2026-08-30 (v1.2 - Display Module with 3 Modes + Thai Definitions)
+**เวอร์ชัน:** 1.3.0
+**อัปเดตล่าสุด:** 2026-08-30 (v1.3 - AI Smart Trigger + Cooldown System)
 
 ---
