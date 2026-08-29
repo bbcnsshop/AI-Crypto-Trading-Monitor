@@ -448,10 +448,91 @@ def _display_verbose(data, symbol: str, timeframe: str):
 
 
 # ============================================================
-# Backward Compatibility
+# Configuration Display
 # ============================================================
-def display_rich_ui_original(data, symbol: str, timeframe: str):
-    """Wrapper สำหรับ backward compatibility - เรียกใช้แบบเดิมได้"""
-    return _display_standard(data, symbol, timeframe)
+def display_config(
+    symbol: str,
+    timeframe: str,
+    display_mode: str,
+    trigger_mode: str,
+    trigger_settings: dict,
+    cooldown_max: int,
+    cooldown_sec: int,
+    version: str = "1.0"
+):
+    """แสดงตาราง Config ที่ใช้ - แทนที่ logging info"""
+
+    # Header
+    console.print("")
+    console.print(Panel.fit(
+        f"[bold cyan]AI CRYPTO TRADING MONITOR[/bold cyan] | "
+        f"[yellow]{symbol} {timeframe}[/yellow] | "
+        f"[green]v{version}[/green]",
+        border_style="cyan"
+    ))
+    console.print("")
+
+    # Config Table
+    table = Table(title="[bold]⚙️ Configuration[/bold]", box=box.ROUNDED)
+    table.add_column("Setting", style="cyan", width=22)
+    table.add_column("Value", style="white", width=18)
+    table.add_column("Description", style="dim", width=25)
+
+    # Display Mode
+    mode_styles = {"standard": "white", "compact": "yellow", "verbose": "green"}
+    mode_style = mode_styles.get(display_mode, "white")
+    table.add_row(
+        "[bold]Display Mode[/bold]",
+        f"[{mode_style}]{display_mode.upper()}[/{mode_style}]",
+        "standard | compact | verbose"
+    )
+
+    # Trigger Mode
+    trigger_styles = {"smart": "green", "schedule": "yellow", "manual": "cyan"}
+    trigger_style = trigger_styles.get(trigger_mode, "white")
+    table.add_row(
+        "[bold]Trigger Mode[/bold]",
+        f"[{trigger_style}]{trigger_mode.upper()}[/{trigger_style}]",
+        "smart | schedule | manual"
+    )
+
+    # Trigger Settings (if smart mode)
+    if trigger_mode == "smart":
+        triggers = []
+        if trigger_settings.get('rsi'): triggers.append("RSI")
+        if trigger_settings.get('pattern'): triggers.append("Pattern")
+        if trigger_settings.get('macd'): triggers.append("MACD")
+        if trigger_settings.get('near_level'): triggers.append("Near")
+        if trigger_settings.get('high_vol'): triggers.append("Vol")
+        if trigger_settings.get('big_move'): triggers.append("Move")
+        if triggers:
+            table.add_row(
+                "[bold]Smart Triggers[/bold]",
+                f"[green]{', '.join(triggers)}[/green]",
+                "Active indicators"
+            )
+        else:
+            table.add_row(
+                "[bold]Smart Triggers[/bold]",
+                "[dim]None[/dim]",
+                "No triggers enabled"
+            )
+    elif trigger_mode == "schedule":
+        interval = trigger_settings.get('interval', 60)
+        table.add_row(
+            "[bold]Interval[/bold]",
+            f"[yellow]{interval} min[/yellow]",
+            "Time between sends"
+        )
+
+    # Cooldown
+    table.add_row(
+        "[bold]Cooldown[/bold]",
+        f"[red]{cooldown_max}/hr[/red], {cooldown_sec}s",
+        "Rate limiting"
+    )
+
+    console.print(table)
+    console.print("")
 
     console.print(f"[dim]Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}[/dim]")
