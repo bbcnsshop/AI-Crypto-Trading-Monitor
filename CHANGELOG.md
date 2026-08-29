@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file.
 
+# 📋 Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [1.4.1] - 2026-08-30
+
+### ✨ Added
+
+#### 🎯 AI Trigger Modes (3 โหมด)
+- **SMART Mode** - ส่ง AI เฉพาะเมื่อ indicators ตรงเงื่อนไข (RSI, Pattern, MACD, Near Level, Volatility, Big Move)
+- **SCHEDULE Mode** - ส่ง AI ทุก X นาทีตาม `SCHEDULE_INTERVAL_MINUTES` (สำหรับ consistent analysis)
+- **MANUAL Mode** - ส่ง AI เฉพาะเมื่อกดปุ่ม M (สำหรับ on-demand)
+
+#### 📅 ScheduleTracker Class
+- ติดตาม `last_send_time`, `send_today_count`
+- Auto reset counter เมื่อข้ามวัน (24h rollover)
+- จำกัด `SCHEDULE_MAX_PER_DAY` ครั้ง/วัน
+
+#### ⚙️ Config Table Display
+- เพิ่มฟังก์ชัน `display_config()` ใน `display.py`
+- แสดง config เป็น Rich Table แทน console.print logging
+- แสดง: Display Mode, Trigger Mode, Smart Triggers, Cooldown, Version
+
+### 📝 Changed
+- `main.py` - เปลี่ยน startup จาก console.print logging → `display_config()` table
+- `config.py` - เพิ่ม `VERSION = "1.4.0"`, `AI_TRIGGER_MODE`, `SCHEDULE_INTERVAL_MINUTES`
+- `ai_trigger.py` - เพิ่ม `ScheduleTracker` class + `check_trigger()` dispatcher
+
+### 🐛 Fixed
+- `display.py` - แก้ ZeroDivisionError ใน `_get_ema_signal()` (เช็ค ema20==0)
+- `display.py` - แก้ ATR% ZeroDivisionError (เช็ค close>0)
+- `display.py` - Table 3 แสดง 11 candlestick patterns ครบทุกตัว
+
+### 🗑️ Removed
+- 30+ บรรทัด `console.print()` startup logging ใน `main.py` (แทนด้วย table)
+- บรรทัด `[bold green]=== AI CRYPTO TRADING MONITOR v...` ซ้ำซ้อน
+
+---
+
+## [1.4.0] - 2026-08-30
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
