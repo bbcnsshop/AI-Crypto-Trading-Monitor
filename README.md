@@ -1,6 +1,8 @@
 # AI Crypto Trading Monitor
 
-บอทสแกนกราฟคริปโท (BTC/USDT) ดึงข้อมูลจาก Binance คำนวณ Indicators (RSI, MACD, ATR, EMA), ตรวจจับ Candlestick Patterns (11 แบบ), Fibonacci และ VPVR แล้วส่งให้ AI วิเคราะห์จุดเข้า 3 ระดับ (3-Tier Entry) พร้อม TP/SL แสดงผลบน Terminal ด้วย Rich UI
+บอทสแกนกราฟคริปโต (BTC/USDT) ดึงข้อมูลจาก Binance คำนวณ Indicators (RSI, MACD, ATR, EMA), ตรวจจับ Candlestick Patterns (11 แบบ), Fibonacci และ VPVR แล้วส่งให้ AI วิเคราะห์จุดเข้า 3 ระดับ (3-Tier Entry) พร้อม TP/SL แสดงผลบน Terminal ด้วย Rich UI
+
+**เวอร์ชัน:** 1.4.2
 
 ---
 
@@ -10,49 +12,62 @@
 2. [วิธีติดตั้ง](#-วิธีติดตั้ง)
 3. [การตั้งค่า](#-การตั้งค่า)
 4. [วิธีใช้งาน](#-วิธีใช้งาน)
-5. [AI Trigger System](#-ai-trigger-system)
-6. [Display Modes](#-display-modes)
-7. [Logging System](#-logging-system)
+5. [Display Modes](#-display-modes)
+6. [AI Trigger System](#-ai-trigger-system)
+7. [Indicators และการปรับแต่ง](#-indicators-และการปรับแต่ง)
 8. [Candlestick Patterns](#-candlestick-patterns)
 9. [การแก้ปัญหา](#-การแก้ปัญหา)
-10. [คำศัพท์ที่ควรรู้](#-คำศัพท์ที่ควรรู้)
-11. [คำเตือน](#-คำเตือน)
+10. [คำเตือน](#-คำเตือน)
 
 ---
 
 ## 📁 โครงสร้างโปรเจกต์
 
 | ไฟล์ | คำอธิบาย |
-|--------|-----------|
-| `main.py` | Entry point + main loop (232 บรรทัด) |
+|-------|-----------|
+| `main.py` | Entry point + main loop |
 | `config.py` | Configuration ทั้งหมด |
 | `indicators.py` | Indicators, Fibonacci, VPVR |
 | `ai_trigger.py` | Smart Trigger + Cooldown System |
 | `ai_client.py` | AI Context + OpenRouter API |
 | `display.py` | Rich UI Display (3 modes) |
 | `candlestick_patterns.py` | Candlestick Patterns (11 แบบ) |
-| `backtest.py` | Backtest/Winrate |
+| `backtest.py` | Backtest Performance |
 
 ---
 
 ## 🚀 วิธีติดตั้ง
 
 ```bash
-# 1. Clone
+# 1. Clone หรือ cd เข้าโฟลเดอร์
 cd /Users/Parinya/VSCode/BinanceMonitor
 
-# 2. Virtual Environment
+# 2. สร้าง Virtual Environment
 python3 -m venv venv
 source venv/bin/activate
 
 # 3. ติดตั้ง Dependencies
 pip3 install -r requirements.txt
 
-# 4. ตั้งค่า
+# 4. คัดลอก .env.example เป็น .env
 cp .env.example .env
 
-# 5. กรอก API Key ในไฟล์ .env
+# 5. กรอก API Key ในไฟล์ .env (ดูวิธีด้านล่าง)
 ```
+
+### การขอ API Key
+
+**OpenRouter API Key (จำเป็นสำหรับ AI วิเคราะห์):**
+1. ไปที่ https://openrouter.ai/
+2. สมัครสมาชิก + เติมเครดิต (เริ่มต้น $5)
+3. สร้าง API Key แล้วกรอกใน `.env`
+
+**Binance API Key (ไม่บังคับ - สำหรับเพิ่ม rate limit):**
+1. ไปที่ https://www.binance.com/
+2. Settings > API Management
+3. สร้าง API Key (แนะนำ Read-Only)
+
+
 
 ---
 
@@ -61,20 +76,48 @@ cp .env.example .env
 ### ไฟล์ `.env`
 
 ```env
-OPENROUTER_API_KEY=your_api_key_here
+# จำเป็น - OpenRouter API Key
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+
+# ไม่บังคับ - Binance API Keys
 BINANCE_API_KEY=
 BINANCE_API_SECRET=
-SYMBOL=BTC/USDT
-TIMEFRAME=1h
+
+# ไม่บังคับ - เปลี่ยน Model
+OPENROUTER_MODEL=deepseek/deepseek-chat
 ```
 
 ### ไฟล์ `config.py`
 
 ```python
-TEST_MODE = True              # True = รัน 1 รอบ, False = รันทุกชั่วโมง
-SYMBOL = "BTC/USDT"
-TIMEFRAME = "1h"
-DISPLAY_MODE = "standard"    # standard | compact | verbose
+# Trading Configuration
+SYMBOL = "BTC/USDT"              # คู่เทรด
+TIMEFRAME = "1h"                # Timeframe: 1m, 5m, 15m, 1h, 4h, 1d
+CANDLE_LIMIT = 100              # จำนวน candles ที่ดึง
+SWING_LOOKBACK = 5              # หา Swing High/Low
+VPVR_BINS = 50                  # จำนวน bins สำหรับ VPVR
+VALUE_AREA_PCT = 0.70           # Value Area (70% ของ volume)
+
+# Display Configuration
+DISPLAY_MODE = "standard"        # standard | compact | verbose
+
+# AI Trigger Mode
+AI_TRIGGER_MODE = "smart"        # smart | schedule | manual
+
+# Smart Trigger Settings
+TRIGGER_RSI_EXTREME = True
+TRIGGER_PATTERN = True
+TRIGGER_MACD_CROSS = True
+TRIGGER_NEAR_LEVEL = True
+TRIGGER_HIGH_VOLATILITY = True
+TRIGGER_BIG_MOVE = False
+
+# Cooldown
+AI_COOLDOWN_MAX_PER_HOUR = 3
+AI_COOLDOWN_SECONDS = 300
+
+# Test Mode
+TEST_MODE = True                 # True = 1 รอบ, False = รันต่อเนื่อง
 ```
 
 ---
@@ -82,134 +125,207 @@ DISPLAY_MODE = "standard"    # standard | compact | verbose
 ## ▶️ วิธีใช้งาน
 
 ```bash
-# รันแบบ Test (1 รอบ)
+# รันแบบ Test (1 รอบแล้วจบ)
 python3 main.py
 
 # รันแบบ Scheduled (ทุกชั่วโมง)
 # แก้ config.py: TEST_MODE = False
 python3 main.py
-
-# รัน Backtest
-python3 backtest.py
-```
-
----
-
-## 🤖 AI Trigger System
-
-ระบบ Trigger อัจฉริยะประหยัด API
-
-### Smart Triggers
-
-| Trigger | Default | คำอธิบาย |
-|---------|---------|-----------|
-| RSI Extreme | ✅ ON | RSI < 30 หรือ > 70 |
-| Pattern | ✅ ON | มี Bullish/Bearish pattern |
-| MACD Cross | ✅ ON | MACD ตัด Signal line |
-| Near Level | ✅ ON | ใกล้ Fib/VPVR ±0.5% |
-| High Volatility | ✅ ON | ATR > 1.5% ของราคา |
-| Big Move | ❌ OFF | ราคาเปลี่ยน > 1% |
-
-### Cooldown
-
-- ส่งได้สูงสุด **3 ครั้ง/ชั่วโมง**
-- ห่างกันอย่างน้อย **5 นาที**
-
-### ตัวอย่าง Output
-
-```
-Step 6: ส่ง AI... (SMART_TRIGGER)
-  RSI Overbought (70.4 > 70) | Near Key Level
-  ✓ AI (1/3)
 ```
 
 ---
 
 ## 🎨 Display Modes
 
-| Mode | คำอธิบาย |
-|------|-----------|
-| `standard` | ตาราง + Key Levels + Patterns |
-| `compact` | 1 บรรทัดสรุป เห็นเร็วๆ |
-| `verbose` | มีคำอธิบายใต้ตาราง (Thai) |
-
-เปลี่ยนโหมดใน `config.py`:
-```python
-DISPLAY_MODE = "verbose"
-```
+| Mode | คำอธิบาย | Backtest | Definitions |
+|------|-----------|----------|-------------|
+| `standard` | ตาราง + Key Levels + Patterns | ✅ | ❌ |
+| `compact` | 1 บรรทัดสรุป เห็นเร็วๆ | ❌ | ❌ |
+| `verbose` | มีคำอธิบายใต้ตาราง (ภาษาไทย) | ✅ | ✅ |
 
 ---
 
-## 📝 Logging System
+## 🤖 AI Trigger System
 
-### ตำแหน่ง Log Files
+### Trigger Modes
 
+| Mode | คำอธิบาย |
+|------|-----------|
+| `smart` | ส่งเมื่อ indicators ตรงเงื่อนไข (แนะนำ) |
+| `schedule` | ส่งทุก X นาทีตาม `SCHEDULE_INTERVAL_MINUTES` |
+| `manual` | กด A เพื่อส่ง AI เอง |
+
+### Smart Triggers
+
+| Trigger | Default | คำอธิบาย | ค่าที่ปรับ |
+|---------|---------|-----------|------------|
+| RSI Extreme | ✅ | RSI < 30 หรือ > 70 | `RSI_OVERSOLD`, `RSI_OVERBOUGHT` |
+| Pattern | ✅ | มี Bullish/Bearish pattern | - |
+| MACD Cross | ✅ | MACD ตัด Signal line | - |
+| Near Level | ✅ | ใกล้ Fib/VPVR ±0.5% | `LEVEL_DISTANCE_PCT` |
+| High Volatility | ✅ | ATR > 1.5% ของราคา | `ATR_HIGH_PCT` |
+| Big Move | ❌ | ราคาเปลี่ยน > 1% | `BIG_MOVE_PCT` |
+
+### Cooldown
+
+- **ส่งได้สูงสุด:** 3 ครั้ง/ชั่วโมง
+- **ห่างกันอย่างน้อย:** 5 นาที (300 วินาที)
+
+
+
+---
+
+## 📊 Indicators และการปรับแต่ง
+
+### RSI (Relative Strength Index)
+
+| ค่า | สถานะ | ความหมาย |
+|-----|--------|----------|
+| 0-30 | 🟢 Oversold | ราคาขายมากเกินไป แนวโน้มกลับตัวขึ้น |
+| 30-70 | ⚪ Neutral | โมเมนตัมปกติ ไม่มีสัญญาณชัด |
+| 70-100 | 🔴 Overbought | ราคาซื้อมากเกินไป แนวโน้มกลับตัวลง |
+
+**ปรับแต่ง:**
+```python
+RSI_OVERSOLD = 30
+RSI_OVERBOUGHT = 70
 ```
-logs/
-├── trading_monitor.log      # Log ปัจจุบัน
-├── trading_monitor.log.1    # Backup 1
-├── trading_monitor.log.2   # Backup 2
-└── trading_monitor.log.3   # Backup 3
+
+**คำแนะนำ:**
+- **Scalping (5m-15m):** ใช้ RSI 20/80 (ไวต่อการกลับตัว)
+- **Swing (1h-4h):** ใช้ RSI 30/70 (default)
+- **Long-term (1d):** ใช้ RSI 40/60 (ไม่ไวเกินไป)
+
+### MACD
+
+| Histogram | สถานะ | ความหมาย |
+|-----------|--------|----------|
+| > 0 | 🟢 Bullish | แรงซื้อเพิ่ม แนวโน้มขาขึ้น |
+| < 0 | 🔴 Bearish | แรงขายเพิ่ม แนวโน้มขาลง |
+| ตัด 0 ขึ้น | 🟢 Signal | กลับตัวเป็นขาขึ้น |
+| ตัด 0 ลง | 🔴 Signal | กลับตัวเป็นขาลง |
+
+### ATR (Average True Range)
+
+ใช้วัด **ความผันผวน** และกำหนด Stop Loss / Take Profit
+
+| ATR | ความผันผวน | คำแนะนำ |
+|-----|-------------|----------|
+| < 1% | ต่ำ | ตลาดเงียบ ไม่ควรเข้า |
+| 1-2% | ปกติ | ควรเข้าได้ |
+| > 2% | สูง | ระวัง มี news |
+
+```python
+ATR_HIGH_PCT = 1.5    # ATR > 1.5% = high volatility
+# SL = ราคา - (ATR × 1.5)
+# TP = ราคา + (ATR × 2)
 ```
 
-### ระดับ Log
+### EMA
 
-| Level | Console | File |
-|-------|---------|------|
-| `INFO` | ✅ | ❌ |
-| `ERROR` | ✅ | ✅ |
+| EMA vs ราคา | สถานะ | ความหมาย |
+|-------------|--------|----------|
+| ราคา > EMA | 🟢 Uptrend | แนวโน้มขาขึ้น |
+| ราคา < EMA | 🔴 Downtrend | แนวโน้มขาลง |
+| ราคา ≈ EMA | ⚪ Sideways | ไม่ชัดเจน |
+
+### Fibonacci Retracement
+
+| ระดับ | ความสำคัญ |
+|--------|-----------|
+| 0.382 | ระดับตั้งต้น |
+| 0.500 | กึ่งกลาง |
+| **0.618** | Golden Ratio - โอกาสกลับตัวสูงสุด |
+
+### VPVR (Volume Profile)
+
+| ระดับ | ความหมาย |
+|--------|----------|
+| POC | ราคาที่มี volume ซื้อขายสูงสุด |
+| VAH | ขอบบน Value Area 70% - แนวต้าน |
+| VAL | ขอบล่าง Value Area 70% - แนวรับ |
 
 ---
 
 ## 🕯️ Candlestick Patterns (11 แบบ)
 
-### Bullish (สัญญาณขาขึ้น)
-- Bullish Engulfing, Bullish Pin Bar, Hammer, Piercing Line
+### 🟢 Bullish
+- **Bullish Engulfing** - กลืนขาขึ้น
+- **Hammer** - ค้อน
+- **Bullish Pin Bar** - Pin Bar ขาขึ้น
+- **Piercing Line** - เจาะทะลุ
 
-### Bearish (สัญญาณขาลง)
-- Bearish Engulfing, Bearish Pin Bar, Shooting Star, Hanging Man, Dark Cloud Cover
+### 🔴 Bearish
+- **Bearish Engulfing** - กลืนขาลง
+- **Bearish Pin Bar** - Pin Bar ขาลง
+- **Shooting Star** - ดาวตก
+- **Hanging Man** - คนแขวน
+- **Dark Cloud Cover** - เมฆคลุม
 
-### Neutral
-- Doji, Inverted Hammer
+### ⚪ Neutral
+- **Doji** - เทียนศูนย์
+- **Inverted Hammer** - ค้อนกลับ
+
+### ปรับแต่ง Sensitivity
+```python
+DOJI_BODY = 0.1
+PIN_RATIO = 2.0
+HAMMER_WICK = 0.5
+HAMMER_POS = 0.6
+SHOOT_POS = 0.4
+```
+
+**ค่าที่สูงขึ้น = Pattern ยากขึ้น (ผ่านน้อยกว่า)**
+**ค่าที่ต่ำลง = Pattern ง่ายขึ้น (ผ่านมากขึ้น)**
 
 ---
 
 ## 🐛 การแก้ปัญหา
 
+### Module not found
 ```bash
-# Module not found
 pip3 install -r requirements.txt
-
-# API Key error
-# เปิด .env แล้วใส่ OPENROUTER_API_KEY
 ```
+
+### API Key error
+1. เปิดไฟล์ `.env`
+2. ใส่ `OPENROUTER_API_KEY=your_key_here`
+3. รีสตาร์ทโปรแกรม
+
+### SSL Error (macOS)
+```bash
+brew install openssl@3
+```
+
+---
+
+## ⚠️ คำเตือน
+
+> **โปรแกรมนี้เป็นเครื่องมือช่วยวิเคราะห์เท่านั้น ไม่ใช่คำแนะนำในการลงทุน**
+>
+> - ผลการวิเคราะห์จาก AI เป็นเพียงข้อมูลประกอบการตัดสินใจ
+> - การลงทุนในคริปโตมีความเสี่ยงสูง
+> - ควรศึกษาข้อมูลและบริหารความเสี่ยงด้วยตนเอง
 
 ---
 
 ## 📚 คำศัพท์ที่ควรรู้
 
 | คำศัพท์ | ความหมาย |
-|---------|-----------|
-| RSI | Relative Strength Index - วัดโมเมนตัม 0-100 |
-| MACD | Moving Average Convergence Divergence - ดูเทรนด์ |
-| ATR | Average True Range - วัดความผันผวน |
-| EMA | Exponential Moving Average - ค่าเฉลี่ยเคลื่อนที่ |
+|----------|----------|
+| RSI | Relative Strength Index |
+| MACD | Moving Average Convergence Divergence |
+| ATR | Average True Range |
+| EMA | Exponential Moving Average |
 | Fibonacci | ระดับราคาจากสัดส่วนทองคำ |
-| VPVR | Volume Profile - โปรไฟล์ปริมาณซื้อขาย |
-| POC | Point of Control - ราคาที่มี volume สูงสุด |
+| VPVR | Volume Profile |
+| POC | Point of Control |
 | TP/SL | Take Profit / Stop Loss |
+| Bullish | แนวโน้มขาขึ้น |
+| Bearish | แนวโน้มขาลง |
 
 ---
 
-## ⚠️ คำเตือน
-
-> **สำคัญ:** โปรแกรมนี้เป็นเครื่องมือช่วยวิเคราะห์เท่านั้น **ไม่ใช่คำแนะนำในการลงทุน**
->
-> - ผลการวิเคราะห์จาก AI เป็นเพียงข้อมูลประกอบการตัดสินใจ
-> - การลงทุนในคริปโทมีความเสี่ยงสูง
-
----
-
-**เวอร์ชัน:** 1.3.0  
+**เวอร์ชัน:** 1.4.2  
 **อัปเดตล่าสุด:** 2026-08-30  
 **GitHub:** https://github.com/bbcnsshop/AI-Crypto-Trading-Monitor

@@ -157,10 +157,7 @@ def display_rich_ui(data, symbol: str, timeframe: str, mode: str = "standard"):
 def _display_standard(data, symbol: str, timeframe: str):
     """Standard Mode - แบบเดิม (backward compatible)"""
     console.clear()
-    console.print(Panel.fit(
-        f"[bold cyan]AI CRYPTO TRADING MONITOR[/bold cyan] | {symbol} {timeframe}",
-        border_style="cyan"
-    ))
+    console.print(f"[dim]{symbol} {timeframe}[/dim]")
     console.print("")
 
     indicators = data.indicators
@@ -242,16 +239,18 @@ def _display_standard(data, symbol: str, timeframe: str):
             title="[bold cyan]AI Analysis & Trading Plan[/bold cyan]",
             border_style="green", padding=(1, 2)
         ))
+
+    # Backtest Performance
+    if hasattr(data, 'backtest_result') and data.backtest_result:
+        _display_backtest_summary(data.backtest_result)
+
     console.print(f"[dim]Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}[/dim]")
 
 
 def _display_compact(data, symbol: str, timeframe: str):
     """Compact Mode - แบบย่อ เห็นเร็วๆ"""
     console.clear()
-    console.print(Panel.fit(
-        f"[bold cyan]AI CRYPTO TRADING MONITOR[/bold cyan] | {symbol} {timeframe} | COMPACT",
-        border_style="cyan"
-    ))
+    console.print(f"[dim]{symbol} {timeframe} | COMPACT[/dim]")
     indicators = data.indicators
     close = data.latest_close or 0
     rsi = indicators.get('rsi', 0) or 0
@@ -322,10 +321,7 @@ def display_rich_ui_original(data, symbol: str, timeframe: str):
 def _display_verbose(data, symbol: str, timeframe: str):
     """Verbose Mode - แบบเต็ม มีคำอธิบายใต้ตาราง"""
     console.clear()
-    console.print(Panel.fit(
-        f"[bold cyan]AI CRYPTO TRADING MONITOR[/bold cyan] | {symbol} {timeframe} | VERBOSE",
-        border_style="cyan"
-    ))
+    console.print(f"[dim]{symbol} {timeframe} | VERBOSE[/dim]")
     console.print("")
 
     indicators = data.indicators
@@ -436,6 +432,10 @@ def _display_verbose(data, symbol: str, timeframe: str):
     _print_def_box("Patterns", INDICATOR_DEFINITIONS['patterns'])
     console.print("")
 
+    # Backtest Performance
+    if hasattr(data, 'backtest_result') and data.backtest_result:
+        _display_backtest_summary(data.backtest_result)
+
     # AI Analysis
     if data.ai_analysis:
         console.print(Panel.fit(
@@ -445,6 +445,74 @@ def _display_verbose(data, symbol: str, timeframe: str):
         ))
 
     console.print(f"[dim]Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}[/dim]")
+
+
+# ============================================================
+# Backtest Summary Display
+# ============================================================
+def _display_backtest_summary(result: Dict):
+    """แสดง Backtest Performance Summary"""
+    winrate = result.get('winrate', 0)
+    total_trades = result.get('total_trades', 0)
+    profit_factor = result.get('profit_factor', 0)
+    total_pnl = result.get('total_pnl', 0)
+    avg_win = result.get('avg_win', 0)
+    avg_loss = result.get('avg_loss', 0)
+    long_wr = result.get('long_winrate', 0)
+    short_wr = result.get('short_winrate', 0)
+    period = result.get('period', '')
+
+    # Verdict emoji
+    if winrate >= 50 and profit_factor >= 1.5:
+        verdict = "[bold green]✅ GOOD[/bold green]"
+        border = "green"
+    elif winrate >= 40:
+        verdict = "[bold yellow]⚠️  MARGINAL[/bold yellow]"
+        border = "yellow"
+    else:
+        verdict = "[bold red]❌ POOR[/bold red]"
+        border = "red"
+
+    # Build summary table
+    t = Table(box=box.ROUNDED, show_header=False, padding=(0, 1))
+    t.add_column("Metric", style="cyan", width=18)
+    t.add_column("Value", style="white", width=15)
+    t.add_column("Direction", style="dim", width=20)
+    t.add_column("Winrate", style="white", width=10)
+
+    wr_color = "green" if winrate >= 50 else "red"
+    pf_color = "green" if profit_factor >= 1.5 else "yellow" if profit_factor >= 1.0 else "red"
+    pnl_color = "green" if total_pnl > 0 else "red"
+
+    t.add_row(
+        f"[bold]Winrate[/bold]",
+        f"[bold {wr_color}]{winrate:.2f}%[/bold {wr_color}]",
+        "[cyan]LONG[/cyan]",
+        f"[{('green' if long_wr >= 50 else 'red')}]{long_wr:.2f}%[/]",
+    )
+    t.add_row(
+        f"[bold]Total Trades[/bold]",
+        f"{total_trades}",
+        "[cyan]SHORT[/cyan]",
+        f"[{('green' if short_wr >= 50 else 'red')}]{short_wr:.2f}%[/]",
+    )
+    t.add_row(
+        f"[bold]Profit Factor[/bold]",
+        f"[{pf_color}]{profit_factor:.2f}[/{pf_color}]",
+        "[green]Avg Win[/green]",
+        f"[green]+{avg_win:.2f}%[/green]" if avg_win > 0 else f"{avg_win:.2f}%"
+    )
+    t.add_row(
+        f"[bold]Total P&L[/bold]",
+        f"[{pnl_color}]{total_pnl:+.2f}%[/{pnl_color}]",
+        "[red]Avg Loss[/red]",
+        f"[red]{avg_loss:.2f}%[/red]" if avg_loss < 0 else f"+{avg_loss:.2f}%"
+    )
+
+    title = f"[bold]📊 Backtest Performance[/bold] | {period}"
+    console.print(Panel(t, title=title, border_style=border, padding=(0, 1)))
+    console.print(f"  [dim]Verdict: {verdict}[/dim]")
+    console.print("")
 
 
 # ============================================================
