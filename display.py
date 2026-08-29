@@ -113,7 +113,7 @@ def _get_macd_signal(macd_hist: float) -> str:
 
 
 def _get_ema_signal(close: float, ema20: float) -> str:
-    if close is None or ema20 is None: return "N/A"
+    if close is None or ema20 is None or ema20 == 0: return "N/A"
     diff = (close - ema20) / ema20 * 100
     if diff > 0.5: return "Uptrend"
     if diff < -0.5: return "Downtrend"
@@ -208,13 +208,28 @@ def _display_standard(data, symbol: str, timeframe: str):
     console.print(table2)
     console.print("")
 
-    table3 = Table(title="[bold]Candlestick Patterns[/bold]", box=box.ROUNDED)
+    # 11 Candlestick Patterns
+    patterns_list = [
+        # Bullish (ขาขึ้น)
+        ('bullish_engulfing', 'Bullish Engulfing', 'green'),
+        ('hammer', 'Hammer', 'green'),
+        ('bullish_pin_bar', 'Bullish Pin Bar', 'green'),
+        ('piercing_line', 'Piercing Line', 'green'),
+        # Bearish (ขาลง)
+        ('bearish_engulfing', 'Bearish Engulfing', 'red'),
+        ('bearish_pin_bar', 'Bearish Pin Bar', 'red'),
+        ('shooting_star', 'Shooting Star', 'red'),
+        ('hanging_man', 'Hanging Man', 'red'),
+        ('dark_cloud_cover', 'Dark Cloud Cover', 'red'),
+        # Neutral
+        ('doji', 'Doji', 'yellow'),
+        ('inverted_hammer', 'Inverted Hammer', 'yellow'),
+    ]
+
+    table3 = Table(title="[bold]Candlestick Patterns (11)[/bold]", box=box.ROUNDED)
     table3.add_column("Pattern", style="cyan", width=25)
     table3.add_column("Status", style="white", width=15, justify="center")
-    for k, label in [('bullish_engulfing', 'Bullish Engulfing'),
-                     ('bearish_engulfing', 'Bearish Engulfing'),
-                     ('bullish_pin_bar', 'Bullish Pin Bar'),
-                     ('bearish_pin_bar', 'Bearish Pin Bar')]:
+    for k, label, _ in patterns_list:
         if k in data.patterns:
             status = "[green]DETECTED[/green]" if data.patterns[k] else "[dim]None[/dim]"
             table3.add_row(label, status)
@@ -335,11 +350,12 @@ def _display_verbose(data, symbol: str, timeframe: str):
     rsi_status = "💪 แรงซื้อมาก" if rsi < 30 else "💪 แรงขายมาก" if rsi > 70 else "⚖️ สมดุล"
     macd_status = "📈 Momentum ขึ้น" if macd_hist > 0 else "📉 Momentum ลง"
     ema_status = "เหนือเส้น" if close > ema20 else "ใต้เส้น"
+    atr_pct_str = f"{atr/close*100:.1f}% ความผันผวน" if close and close > 0 else "-"
 
     table1.add_row("💰 Price", _format_value('price', close), "-", "-")
     table1.add_row("📈 RSI (14)", _format_value('rsi', rsi), _format_signal(rsi_sig), rsi_status)
     table1.add_row("📉 MACD Hist", _format_value('macd_hist', macd_hist), _format_signal(macd_sig), macd_status)
-    table1.add_row("📊 ATR (14)", _format_value('atr', atr), "-", f"{atr/close*100:.1f}% ความผันผวน")
+    table1.add_row("📊 ATR (14)", _format_value('atr', atr), "-", atr_pct_str)
     table1.add_row("📍 EMA 20", _format_value('ema20', ema20), _format_signal(ema_sig), ema_status)
     console.print(table1)
 
@@ -409,11 +425,10 @@ def _display_verbose(data, symbol: str, timeframe: str):
         'dark_cloud_cover': 'Dark Cloud Cover - การกลับตัวลง',
     }
 
-    for k, label in pattern_meanings.items():
+    for k, meaning in pattern_meanings.items():
         if k in data.patterns:
             status = "[green]✅ DETECTED[/green]" if data.patterns[k] else "[dim]⬜ None[/dim]"
-            meaning = pattern_meanings.get(k, '')
-            table3.add_row(label.split(' - ')[0] if ' - ' in label else label, status, meaning)
+            table3.add_row(k.replace('_', ' ').title(), status, meaning)
     console.print(table3)
 
     # Definition box for patterns
