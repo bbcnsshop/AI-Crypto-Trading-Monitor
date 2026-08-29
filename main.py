@@ -43,13 +43,14 @@ from config import (
     TRIGGER_NEAR_LEVEL, TRIGGER_HIGH_VOLATILITY, TRIGGER_BIG_MOVE,
     RSI_OVERSOLD, RSI_OVERBOUGHT, ATR_HIGH_PCT,
     LEVEL_DISTANCE_PCT, BIG_MOVE_PCT, AI_COOLDOWN_SECONDS,
+    AI_TRIGGER_MODE, SCHEDULE_INTERVAL_MINUTES,
     VERSION
 )
 from indicators import (
     calculate_indicators, calculate_fibonacci_levels,
     calculate_vpvr, find_swing_high_low
 )
-from ai_trigger import CooldownTracker, should_send_ai
+from ai_trigger import CooldownTracker, check_trigger, should_send_ai
 from ai_client import build_ai_context, call_openrouter_ai
 from candlestick_patterns import detect_candlestick_patterns
 from display import display_rich_ui as display_rich_ui_new
@@ -172,8 +173,8 @@ def run_analysis():
         if data.vpvr:
             console.print(f"  [green]✓[/green] POC: ${data.vpvr.get('poc', 0):.2f}")
         
-        # STEP 6: AI Trigger
-        should_send, reason, trigger_type = should_send_ai(data, df, _cooldown_tracker)
+        # STEP 6: AI Trigger (ใช้ check_trigger ตาม AI_TRIGGER_MODE)
+        should_send, reason, trigger_type = check_trigger(data, df, _cooldown_tracker)
         if should_send:
             logging.info(f"STEP 6: ส่ง AI | {trigger_type} | {reason}")
             console.print(f"[bold]Step 6:[/bold] ส่ง AI... [green]({trigger_type})[/green]")
@@ -202,17 +203,20 @@ def main():
     logging.info(f"=== MONITOR STARTED | {SYMBOL} {TIMEFRAME} | Mode={TEST_MODE} ===")
     console.print(f"[bold green]=== AI CRYPTO TRADING MONITOR v{VERSION} ===[/bold green]")
     console.print(f"Symbol: {SYMBOL} | Timeframe: {TIMEFRAME}")
-    
-    # Triggers info
-    console.print("[bold]📊 Smart Triggers:[/bold]")
-    t = []
-    if TRIGGER_RSI_EXTREME: t.append(f"RSI <{RSI_OVERSOLD}/ >{RSI_OVERBOUGHT}")
-    if TRIGGER_PATTERN: t.append("Pattern")
-    if TRIGGER_MACD_CROSS: t.append("MACD Cross")
-    if TRIGGER_NEAR_LEVEL: t.append(f"Near ±{LEVEL_DISTANCE_PCT}%")
-    if TRIGGER_HIGH_VOLATILITY: t.append(f"Vol >{ATR_HIGH_PCT}%")
-    if TRIGGER_BIG_MOVE: t.append(f"Move >{BIG_MOVE_PCT}%")
-    console.print(f"  [cyan]{', '.join(t)}[/cyan]")
+
+    # AI Trigger Mode
+    console.print(f"[bold]📊 AI Trigger Mode:[/bold] [cyan]{AI_TRIGGER_MODE.upper()}[/cyan]")
+    if AI_TRIGGER_MODE == "smart":
+        t = []
+        if TRIGGER_RSI_EXTREME: t.append(f"RSI <{RSI_OVERSOLD}/ >{RSI_OVERBOUGHT}")
+        if TRIGGER_PATTERN: t.append("Pattern")
+        if TRIGGER_MACD_CROSS: t.append("MACD Cross")
+        if TRIGGER_NEAR_LEVEL: t.append(f"Near ±{LEVEL_DISTANCE_PCT}%")
+        if TRIGGER_HIGH_VOLATILITY: t.append(f"Vol >{ATR_HIGH_PCT}%")
+        if TRIGGER_BIG_MOVE: t.append(f"Move >{BIG_MOVE_PCT}%")
+        console.print(f"  Triggers: [cyan]{', '.join(t)}[/cyan]")
+    elif AI_TRIGGER_MODE == "schedule":
+        console.print(f"  Interval: [cyan]{SCHEDULE_INTERVAL_MINUTES} min[/cyan]")
     console.print(f"[dim]Cooldown: {AI_COOLDOWN_MAX_PER_HOUR}/hr, min {AI_COOLDOWN_SECONDS}s[/dim]")
     console.print("")
     

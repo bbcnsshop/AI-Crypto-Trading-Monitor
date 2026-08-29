@@ -43,21 +43,37 @@ OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-chat")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # ============================================================
-# AI Trigger Configuration
+# AI Trigger Mode
 # ============================================================
-# Smart Trigger: ส่ง AI เฉพาะเมื่อมีสัญญาณสำคัญ (ประหยัด API)
+# เลือกโหมดการส่ง AI:
+# - 'smart'     : ส่งเมื่อมี trigger จาก indicators (RSI, Pattern, MACD, etc.)
+# - 'schedule'  : ส่งตามเวลาที่กำหนด (ทุก X นาที)
+# - 'manual'    : กด A เพื่อส่ง AI เอง
+AI_TRIGGER_MODE = "smart"
+
+# ============================================================
+# Smart Trigger Settings (ใช้เมื่อ AI_TRIGGER_MODE = 'smart')
+# ============================================================
 TRIGGER_RSI_EXTREME = True        # RSI < 30 หรือ > 70
 TRIGGER_PATTERN = True             # มี Bullish/Bearish pattern
 TRIGGER_MACD_CROSS = True          # MACD ตัด Signal line
 TRIGGER_NEAR_LEVEL = True          # ใกล้ Fib/VPVR ±0.5%
 TRIGGER_HIGH_VOLATILITY = True     # ATR > 1.5% ของราคา
-TRIGGER_BIG_MOVE = False           # ราคาเปลี่ยน > 1% (conservative)
+TRIGGER_BIG_MOVE = False           # ราคาเปลี่ยน > 1%
 
-# Cooldown: จำกัดจำนวนครั้งที่ส่ง AI
+# ============================================================
+# Schedule Settings (ใช้เมื่อ AI_TRIGGER_MODE = 'schedule')
+# ============================================================
+SCHEDULE_INTERVAL_MINUTES = 60     # ส่งทุก 60 นาที
+SCHEDULE_MAX_PER_DAY = 24          # ส่งได้สูงสุด 24 ครั้ง/วัน
+
+# ============================================================
+# Cooldown (ใช้ทุกโหมด)
+# ============================================================
 AI_COOLDOWN_MAX_PER_HOUR = 3       # ส่งได้สูงสุด 3 ครั้ง/ชั่วโมง
 AI_COOLDOWN_SECONDS = 300          # ห่างกันอย่างน้อย 5 นาที (300s)
 
-# Manual Trigger
+# Manual Trigger (ใช้เมื่อ AI_TRIGGER_MODE = 'manual')
 ENABLE_MANUAL_TRIGGER = True       # เปิดให้กดคีย์เพื่อส่ง AI เอง
 MANUAL_KEY_ANALYZE = 'a'           # กด A เพื่อส่ง AI ทันที
 MANUAL_KEY_QUIT = 'q'              # กด Q เพื่อออก

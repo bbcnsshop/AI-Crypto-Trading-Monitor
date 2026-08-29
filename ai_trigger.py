@@ -1,17 +1,21 @@
 """
 AI Trigger Module
 ================
-Smart Trigger + Cooldown System
-ตรวจสอบว่าควรส่ง AI หรือไม่ (ประหยัด API)
+AI Trigger System รองรับ 3 โหมด:
+- smart    : ส่งเมื่อมี trigger จาก indicators
+- schedule : ส่งตามเวลาที่กำหนด
+- manual   : กด A เพื่อส่งเอง
 """
 
 import time as time_module
 from config import (
+    AI_TRIGGER_MODE,
     TRIGGER_RSI_EXTREME, TRIGGER_PATTERN, TRIGGER_MACD_CROSS,
     TRIGGER_NEAR_LEVEL, TRIGGER_HIGH_VOLATILITY, TRIGGER_BIG_MOVE,
     RSI_OVERSOLD, RSI_OVERBOUGHT, ATR_HIGH_PCT,
     LEVEL_DISTANCE_PCT, BIG_MOVE_PCT,
-    AI_COOLDOWN_MAX_PER_HOUR, AI_COOLDOWN_SECONDS
+    AI_COOLDOWN_MAX_PER_HOUR, AI_COOLDOWN_SECONDS,
+    SCHEDULE_INTERVAL_MINUTES, SCHEDULE_MAX_PER_DAY
 )
 
 
@@ -138,3 +142,97 @@ def should_send_ai(data, df, cooldown_tracker: CooldownTracker) -> tuple:
     if should_trigger:
         return True, trigger_reason, "SMART_TRIGGER"
     return False, "No trigger conditions", "NONE"
+
+
+# ============================================================
+# Schedule Tracker
+# ============================================================
+class ScheduleTracker:
+    """Track AI calls for schedule mode"""
+
+    def __init__(self):
+        self.last_send_time = 0
+        self.send_today_count = 0
+        self.day_start = time_module.time()
+
+    def can_send(self) -> tuple:
+        current = time_module.time()
+
+        # Reset daily counter
+        if current - self.day_start >= 86400:
+            self.send_today_count = 0
+            self.day_start = current
+
+        # Check daily limit
+        if self.send_today_count >= SCHEDULE_MAX_PER_DAY:
+            return False, f"Daily limit ({self.send_today_count}/{SCHEDULE_MAX_PER_DAY})"
+
+        # Check interval
+        if self.last_send_time > 0:
+            elapsed = current - self.last_send_time
+            interval_sec = SCHEDULE_INTERVAL_MINUTES * 60
+            if elapsed < interval_sec:
+                remaining = int(interval_sec - elapsed)
+                mins = remaining // 60
+                secs = remaining % 60
+                return False, f"Next in {mins}m {secs}s"
+
+        return True, "OK"
+
+    def record_send(self):
+        self.last_send_time = time_module.time()
+        self.send_today_count += 1
+
+    def get_status(self) -> str:
+        current = time_module.time()
+        if current - self.day_start >= 86400:
+            self.send_today_count = 0
+            self.day_start = current
+        if self.last_send_time > 0:
+            elapsed = current - self.last_send_time
+            interval_sec = SCHEDULE_INTERVAL_MINUTES * 60
+            if elapsed < interval_sec:
+                remaining = int(interval_sec - elapsed)
+                mins = remaining // 60
+                secs = remaining % 60
+                return f"Next: {mins}m {secs}s | Today: {self.send_today_count}/{SCHEDULE_MAX_PER_DAY}"
+        return f"Ready | Today: {self.send_today_count}/{SCHEDULE_MAX_PER_DAY}"
+
+
+# ============================================================
+# Main Dispatcher (เลือกโหมดตาม AI_TRIGGER_MODE)
+# ============================================================
+def check_trigger(data, df, cooldown_tracker, manual_request=False) -> tuple:
+    """
+    ตรวจสอบว่าควรส่ง AI หรือไม่ ตาม AI_TRIGGER_MODE
+    Returns: (should_send, reason, trigger_type)
+    """
+    mode = AI_TRIGGER_MODE.lower()
+
+    # 1. Cooldown check (ทุกโหมด)
+    can_send, cooldown_reason = cooldown_tracker.can_send()
+    if not can_send:
+        return False, cooldown_reason, "COOLDOWN"
+
+    # 2. Smart Mode
+    if mode == "smart":
+        should_trigger, trigger_reason = check_smart_trigger(data, df)
+        if should_trigger:
+            return True, trigger_reason, "SMART_TRIGGER"
+        return False, "No smart trigger", "NONE"
+
+    # 3. Schedule Mode
+    elif mode == "schedule":
+        schedule_tracker = ScheduleTracker()
+        can, reason = schedule_tracker.can_send()
+        if can:
+            return True, f"Scheduled ({SCHEDULE_INTERVAL_MINUTES}min interval)", "SCHEDULE"
+        return False, reason, "SCHEDULE_WAIT"
+
+    # 4. Manual Mode
+    elif mode == "manual":
+        if manual_request:
+            return True, "Manual trigger", "MANUAL"
+        return False, "Manual mode (press 'A' to send)", "MANUAL_WAIT"
+
+    return False, f"Unknown mode: {mode}", "ERROR"
