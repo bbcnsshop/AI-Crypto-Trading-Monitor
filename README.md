@@ -450,6 +450,40 @@ SHOOT_POS = 0.4        # body position ≤ 40% (ล่างสุด)
 ---
 
 
+## 🎨 Display Modes (3 โหมดแสดงผล)
+
+โปรแกรมมีโหมดแสดงผล 3 รูปแบบให้เลือก แก้ที่ `main.py` บรรทัด 55-56:
+
+```python
+# Display mode: 'standard' | 'compact' | 'verbose'
+DISPLAY_MODE = "standard"
+```
+
+### 🟢 Standard Mode (default - แบบเดิม)
+- ตาราง Market & Indicators + Key Levels + Patterns
+- ไม่มีคำอธิบาย (compact + clean)
+
+### 🟡 Compact Mode (แบบย่อ)
+- **1 บรรทัดสรุป**: Price + RSI + MACD + EMA20 พร้อม Signal
+- **1 บรรทัด Key Levels**: Fib/POC/VAH/VAL
+- **Pattern count**: Bull vs Bear
+
+### 🔵 Verbose Mode (แบบเต็ม มีคำอธิบาย)
+- ตารางทุกอย่าง + **คอลัมน์ "สถานะ"** (ภาษาไทย)
+- **ใต้ตารางมี Definition Box** อธิบาย RSI, MACD, ATR, EMA, Fibonacci, VPVR, Patterns
+
+### วิธีเปลี่ยนโหมด
+```bash
+# ใน main.py
+DISPLAY_MODE = "verbose"  # เปลี่ยนเป็น standard | compact | verbose
+
+# หรือผ่าน ENV
+DISPLAY_MODE=verbose python3 main.py
+```
+
+---
+
+## 📝 Logging System
 ## 📝 Logging System
 
 โปรแกรมมีระบบ Logging ที่บันทึกข้อมูลการทำงานลงไฟล์และแสดงที่ Console
@@ -550,7 +584,7 @@ SWING_LOOKBACK = 20
 
 ---
 
-**เวอร์ชัน:** 1.0.0
-**อัปเดตล่าสุด:** 2026-08-29 (v1.1 - Custom Candlestick Library)
+**เวอร์ชัน:** 1.2.0
+**อัปเดตล่าสุด:** 2026-08-30 (v1.2 - Display Module with 3 Modes + Thai Definitions)
 
 ---
