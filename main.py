@@ -42,7 +42,8 @@ from config import (
     TRIGGER_RSI_EXTREME, TRIGGER_PATTERN, TRIGGER_MACD_CROSS,
     TRIGGER_NEAR_LEVEL, TRIGGER_HIGH_VOLATILITY, TRIGGER_BIG_MOVE,
     RSI_OVERSOLD, RSI_OVERBOUGHT, ATR_HIGH_PCT,
-    LEVEL_DISTANCE_PCT, BIG_MOVE_PCT, AI_COOLDOWN_SECONDS
+    LEVEL_DISTANCE_PCT, BIG_MOVE_PCT, AI_COOLDOWN_SECONDS,
+    VERSION
 )
 from indicators import (
     calculate_indicators, calculate_fibonacci_levels,
@@ -199,7 +200,7 @@ def run_analysis():
 def main():
     setup_logging()
     logging.info(f"=== MONITOR STARTED | {SYMBOL} {TIMEFRAME} | Mode={TEST_MODE} ===")
-    console.print("[bold green]=== AI CRYPTO TRADING MONITOR v1.3 ===[/bold green]")
+    console.print(f"[bold green]=== AI CRYPTO TRADING MONITOR v{VERSION} ===[/bold green]")
     console.print(f"Symbol: {SYMBOL} | Timeframe: {TIMEFRAME}")
     
     # Triggers info
