@@ -20,6 +20,7 @@ from typing import Dict, Optional, Tuple, Any
 import numpy as np
 import pandas as pd
 from candlestick_patterns import detect_candlestick_patterns
+from display import display_rich_ui as display_rich_ui_new
 from ta.momentum import RSIIndicator
 from ta.trend import MACD, EMAIndicator
 from ta.volatility import AverageTrueRange
@@ -52,6 +53,8 @@ CANDLE_LIMIT = 100
 SWING_LOOKBACK = 5
 VPVR_BINS = 50
 VALUE_AREA_PCT = 0.70
+# Display mode: 'standard' | 'compact' | 'verbose'
+DISPLAY_MODE = "standard"
 
 load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
@@ -509,7 +512,7 @@ def run_analysis():
         data.ai_analysis = call_openrouter_ai(context)
         
         logging.info("STEP 7: แสดงผล"); console.print("[bold]Step 7:[/bold] แสดงผล...")
-        display_rich_ui(data)
+        display_rich_ui_new(data, SYMBOL, TIMEFRAME, DISPLAY_MODE)
     except Exception as e:
         console.print(f"[red]เกิดข้อผิดพลาด: {e}[/red]")
         console.print(f"[red]{traceback.format_exc()}[/red]")
