@@ -142,15 +142,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## 🔮 Roadmap
+## 🔮 Coming Soon
 
-### v1.5.0 (TBD)
-- [ ] Manual Trigger ครบ
-- [ ] Web UI Dashboard
-- [ ] Telegram Notification
-- [ ] Multi-Symbol Support
+### v1.5.0 - Notifications & Multi-Symbol
+- [ ] Telegram Bot Integration
+- [ ] Email Alerts
+- [ ] Multi-Symbol Support (ETH/USDT, SOL/USDT, etc.)
+- [ ] Historical Data Export (CSV/JSON)
+- [ ] Command-line Arguments (--mode, --symbol, --timeframe)
 
-### v2.0.0 (TBD)
+### v1.6.0 - Web Dashboard
+- [ ] Web Dashboard (FastAPI/Flask)
+- [ ] SQLite Database for History
+- [ ] Real-time Charts (Plotly/D3)
+- [ ] Backtest Improvement (TP/SL Optimization)
+
+### v2.0.0 - Live Trading
 - [ ] Live Trading (Binance Futures)
 - [ ] Risk Management Module
-- [ ] Auto-execute trades
+- [ ] Auto-execute Trades
+- [ ] Position Sizing Calculator
