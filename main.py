@@ -1,107 +1,75 @@
 """
-AI Crypto Trading Monitor
-========================
+AI Crypto Trading Monitor - Main Entry Point
+============================================
 บอทสแกนกราฟคริปโท (BTC/USDT) ดึงข้อมูลจาก Binance ผ่าน ccxt
 คำนวณ Indicators (RSI, MACD, ATR, EMA) ด้วย ta library
-ตรวจจับ Candlestick Patterns (Engulfing, Pin Bar, Doji, Hammer, Shooting Star,
-Piercing Line, Dark Cloud Cover) ด้วย custom library
+ตรวจจับ Candlestick Patterns ด้วย custom library
 Fibonacci Retracement/Extension, VPVR (Volume Profile)
 แล้วส่งข้อมูลให้ AI ผ่าน OpenRouter เพื่อวิเคราะห์จุดเข้า 3 ระดับ (3-Tier Entry)
 พร้อม TP/SL และแสดงผลบน Terminal ด้วย Rich UI
+
+Modules:
+- config.py: Configuration variables
+- indicators.py: Indicators, Fibonacci, VPVR
+- ai_trigger.py: Smart Trigger + Cooldown
+- ai_client.py: AI Context + OpenRouter API
+- display.py: Rich UI Display
+- candlestick_patterns.py: Candlestick Patterns
 """
 
 import os
 import sys
 import time
 import traceback
-from datetime import datetime
-from typing import Dict, Optional, Tuple, Any
-
-import numpy as np
-import pandas as pd
-from candlestick_patterns import detect_candlestick_patterns
-from display import display_rich_ui as display_rich_ui_new
-from ta.momentum import RSIIndicator
-from ta.trend import MACD, EMAIndicator
-from ta.volatility import AverageTrueRange
-
-import ccxt
-from openai import OpenAI
-from dotenv import load_dotenv
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
 import logging
 from logging.handlers import RotatingFileHandler
-from rich import box
+from typing import Optional, Dict, Any
+
+import ccxt
+import pandas as pd
+import numpy as np
+from rich.console import Console
+from rich.panel import Panel
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-# ============================================================
-# โหมดทดสอบ (Test Mode)
-# ============================================================
-# True  = รันทันที 1 รอบ แล้วจบโปรแกรม
-# False = ใช้ APScheduler ตั้งเวลาทุกต้นชั่วโมง (minute=0)
-TEST_MODE = True
-
-# ============================================================
-# Configuration
-# ============================================================
-SYMBOL = "BTC/USDT"
-TIMEFRAME = "1h"
-CANDLE_LIMIT = 100
-SWING_LOOKBACK = 5
-VPVR_BINS = 50
-VALUE_AREA_PCT = 0.70
-# Display mode: 'standard' | 'compact' | 'verbose'
-DISPLAY_MODE = "standard"
-
-# ============================================================
-# AI Trigger Configuration
-# ============================================================
-# Smart Trigger: ส่ง AI เฉพาะเมื่อมีสัญญาณสำคัญ (ประหยัด API)
-TRIGGER_RSI_EXTREME = True        # RSI < 30 หรือ > 70
-TRIGGER_PATTERN = True            # มี Bullish/Bearish pattern
-TRIGGER_MACD_CROSS = True         # MACD ตัด Signal line
-TRIGGER_NEAR_LEVEL = True         # ใกล้ Fib/VPVR ±0.5%
-TRIGGER_HIGH_VOLATILITY = True    # ATR > 1.5% ของราคา
-TRIGGER_BIG_MOVE = False          # ราคาเปลี่ยน > 1% (conservative)
-
-# Cooldown: จำกัดจำนวนครั้งที่ส่ง AI
-AI_COOLDOWN_MAX_PER_HOUR = 3      # ส่งได้สูงสุด 3 ครั้ง/ชั่วโมง
-AI_COOLDOWN_SECONDS = 300         # ห่างกันอย่างน้อย 5 นาที (300s)
-
-# Manual Trigger
-ENABLE_MANUAL_TRIGGER = True      # เปิดให้กดคีย์เพื่อส่ง AI เอง
-MANUAL_KEY_ANALYZE = 'a'          # กด A เพื่อส่ง AI ทันที
-MANUAL_KEY_QUIT = 'q'             # กด Q เพื่อออก
-
-# Trigger Thresholds
-RSI_OVERSOLD = 30
-RSI_OVERBOUGHT = 70
-ATR_HIGH_PCT = 1.5                # ATR > 1.5% ของราคา
-LEVEL_DISTANCE_PCT = 0.5          # ใกล้ support/resistance ±0.5%
-BIG_MOVE_PCT = 1.0                # ราคาเปลี่ยน > 1%
-
-load_dotenv()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-chat")
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+# Import from modules
+from config import (
+    TEST_MODE, SYMBOL, TIMEFRAME, CANDLE_LIMIT, SWING_LOOKBACK,
+    VPVR_BINS, VALUE_AREA_PCT, DISPLAY_MODE,
+    LOG_DIR, LOG_FILE, LOG_MAX_BYTES, LOG_BACKUP_COUNT,
+    AI_COOLDOWN_MAX_PER_HOUR,
+    TRIGGER_RSI_EXTREME, TRIGGER_PATTERN, TRIGGER_MACD_CROSS,
+    TRIGGER_NEAR_LEVEL, TRIGGER_HIGH_VOLATILITY, TRIGGER_BIG_MOVE,
+    RSI_OVERSOLD, RSI_OVERBOUGHT, ATR_HIGH_PCT,
+    LEVEL_DISTANCE_PCT, BIG_MOVE_PCT, AI_COOLDOWN_SECONDS
+)
+from indicators import (
+    calculate_indicators, calculate_fibonacci_levels,
+    calculate_vpvr, find_swing_high_low
+)
+from ai_trigger import CooldownTracker, should_send_ai
+from ai_client import build_ai_context, call_openrouter_ai
+from candlestick_patterns import detect_candlestick_patterns
+from display import display_rich_ui as display_rich_ui_new
 
 console = Console()
 
-# Logging
-LOG_DIR = "logs"
-LOG_FILE = f"{LOG_DIR}/trading_monitor.log"   # เก็บเฉพาะ ERROR (สำหรับ debug บนเครื่องอื่น)
-LOG_MAX_BYTES = 1 * 1024 * 1024                # 1 MB (เล็ก เพราะเก็บแค่ ERROR)
-LOG_BACKUP_COUNT = 3                            # เก็บ backup 3 ไฟล์
+
+class TradingData:
+    def __init__(self):
+        self.df: Optional[pd.DataFrame] = None
+        self.latest_close: float = 0
+        self.indicators: Dict = {}
+        self.fibonacci: Dict = {}
+        self.vpvr: Dict = {}
+        self.patterns: Dict = {}
+        self.strategy: Dict = {}
+        self.ai_analysis: str = ""
+
 
 def setup_logging():
-    """ตั้งค่า Logging
-    - Console: แสดง INFO+ (เห็นผลเต็มๆ เวลา run)
-    - File: เก็บเฉพาะ ERROR (ส่งไปเปิดเครื่องอื่น debug ได้, ไม่บวม)
-    - Rotation: 1MB × 3 backups (กันไฟล์บวม)
-    """
+    """Setup logging - Console: INFO+, File: ERROR only"""
     if not os.path.exists(LOG_DIR):
         try:
             os.makedirs(LOG_DIR)
@@ -112,9 +80,7 @@ def setup_logging():
     logger.handlers.clear()
     file_fmt = logging.Formatter('%(asctime)s | %(levelname)-8s | %(name)s | %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     console_fmt = logging.Formatter('%(asctime)s | %(levelname)-8s | %(message)s', datefmt='%H:%M:%S')
-    # File Handler: เก็บเฉพาะ ERROR
     try:
-        # เคลียร์ log เก่าทุกครั้งที่ start ใหม่ (กันบวม + เอาเฉพาะ error รอบล่าสุด)
         for old_file in [LOG_FILE] + [f"{LOG_FILE}.{i}" for i in range(1, LOG_BACKUP_COUNT + 1)]:
             if os.path.exists(old_file):
                 try:
@@ -122,532 +88,55 @@ def setup_logging():
                 except Exception:
                     pass
         fh = RotatingFileHandler(LOG_FILE, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUP_COUNT, encoding='utf-8')
-        fh.setLevel(logging.ERROR)  # เก็บเฉพาะ ERROR (สำหรับ debug บนเครื่องอื่น)
+        fh.setLevel(logging.ERROR)
         fh.setFormatter(file_fmt)
         logger.addHandler(fh)
-    except Exception:
-        pass
-    # Console Handler: แสดง INFO+ (เห็นผลเต็มๆ)
-    ch = logging.StreamHandler(sys.stdout)
+    except Exception as e:
+        console.print(f"[red]ไม่สามารถสร้าง File Handler: {e}[/red]")
+    ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
     ch.setFormatter(console_fmt)
     logger.addHandler(ch)
-    # ลด noise จาก library ภายนอก
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("httpcore").setLevel(logging.WARNING)
-    logging.getLogger("openai").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-    logging.getLogger("apscheduler").setLevel(logging.WARNING)
-    logger.info(f"Logging initialized: {LOG_FILE} (Console: INFO+ | File: ERROR only)")
-
-setup_logging()
-# Binance API Keys (Optional - for higher rate limits)
-# Without keys: Public data works fine, rate limit ~50 req/min
-# With keys: Higher rate limit ~1200 req/min
-BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", "")
-BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET", "")
-
-SYSTEM_PROMPT = """คุณคือผู้เชี่ยวชาญด้านการเทรดคริปโท AI Trading Analyst
-
-**ห้ามใช้คำทักทาย ห้ามเกริ่นนำ ตอบเป็นภาษาไทยอย่างกระชับ**
-
-แสดงผลลัพธ์ใน 3 ส่วนชัดเจน:
-
----
-
-**1) โครงสร้างราคา & VPVR Zone**
-- อธิบายระดับราคาสำคัญจาก Fibonacci และ Volume Profile
-- ระบุ POC, VAH, VAL ที่ชัดเจน
-- วิเคราะห์ Indicators และ Candlestick Patterns ประกอบ
-
----
-
-**2) แผนเทรด 3-Tier Entry (Entry, SL, TP1, TP2, R:R)**
-- Entry 1 (Aggressive): ราคาปิดปัจจุบัน หรือ Fib 0.382
-- Entry 2 (Moderate): Fib 0.5 หรือ EMA 20
-- Entry 3 (Conservative): Fib 0.618 หรือ POC
-- TP1: VAH หรือ Fib Ext 1.272
-- TP2: Fib Ext 1.618
-- SL: ใต้ VAL/POC/Fib 0.618 + 0.5 * ATR
-
----
-
-**3) คำแนะนำการบริหารเงินทุน (Position Sizing %)**
-- แสดงเปอร์เซ็นต์การลงทุนแต่ละระดับ
-- Risk ไม่เกิน 1-2% ต่อไม้"""
-
-# ============================================================
-# TradingData Container
-# ============================================================
-
-class TradingData:
-    """Container for all trading data and analysis results"""
-    def __init__(self):
-        self.df = None
-        self.latest_close = 0.0
-        self.indicators = {}
-        self.fibonacci = {}
-        self.vpvr = {}
-        self.patterns = {}
-        self.strategy = {}
-        self.ai_analysis = ""
-    def clear(self):
-        self.df = None
-        self.latest_close = 0.0
-        self.indicators = {}
-        self.fibonacci = {}
-        self.vpvr = {}
-        self.patterns = {}
-        self.strategy = {}
-        self.ai_analysis = ""
 
 
-# ============================================================
-# Section 1: Data & Indicators
-# ============================================================
-
-def fetch_market_data(symbol: str = SYMBOL, timeframe: str = TIMEFRAME, limit: int = CANDLE_LIMIT) -> Optional[pd.DataFrame]:
-    """
-    ดึงข้อมูล OHLCV จาก Binance ผ่าน ccxt
-    
-    รองรับ 2 โหมด:
-    - ไม่มี API Key: ใช้ Public API (Rate limit ~50 req/min)
-    - มี API Key: ใช้ Authenticated API (Rate limit ~1200 req/min)
-    """
+def fetch_market_data(symbol: str, timeframe: str, limit: int) -> Optional[pd.DataFrame]:
+    """ดึงข้อมูล OHLCV จาก Binance ผ่าน ccxt"""
     try:
-        if BINANCE_API_KEY and BINANCE_API_SECRET:
-            # ใช้ Authenticated API (สำหรับ Higher Rate Limit)
-            exchange = ccxt.binance({
-                'apiKey': BINANCE_API_KEY,
-                'secret': BINANCE_API_SECRET,
-                'enableRateLimit': True,
-                'options': {'defaultType': 'spot'},
-            })
-            api_mode = "Authenticated API"
-        else:
-            # ใช้ Public API
-            exchange = ccxt.binance({
-                'enableRateLimit': True,
-                'options': {'defaultType': 'spot'},
-            })
-            api_mode = "Public API"
-        
-        console.print(f"[dim]กำลังดึงข้อมูล {symbol} Timeframe {timeframe} ({api_mode})...[/dim]")
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+        exchange = ccxt.binance()
+        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
+        if not ohlcv or len(ohlcv) == 0:
+            console.print("[red]ไม่ได้รับข้อมูลจาก API[/red]")
+            return None
         df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        console.print(f"[green]ดึงข้อมูลสำเร็จ: {len(df)} แท่ง ({api_mode})[/green]")
+        df.set_index('timestamp', inplace=True)
         return df
     except Exception as e:
-        logging.error(f"เกิดข้อผิดพลาด: {e}"); logging.debug(traceback.format_exc()); console.print(f"[red]เกิดข้อผิดพลาด: {e}[/red]")
+        console.print(f"[red]เกิดข้อผิดพลาดในการดึงข้อมูล: {e}[/red]")
         return None
 
 
-def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
-    """คำนวณ Indicators: RSI (14), MACD (12,26,9), ATR (14), EMA 20 ใช้ ta library"""
-    if df is None or len(df) < 30:
-        console.print("[yellow]ข้อมูลไม่เพียงพอ[/yellow]")
-        return df
-    try:
-        # RSI (14) - ใช้ RSIIndicator จาก ta.momentum
-        rsi_indicator = RSIIndicator(close=df['close'], window=14, fillna=False)
-        df['rsi'] = rsi_indicator.rsi()
-        
-        # MACD (12, 26, 9) - ใช้ MACD จาก ta.trend
-        macd_indicator = MACD(close=df['close'], window_slow=26, window_fast=12, window_sign=9, fillna=False)
-        df['macd_line'] = macd_indicator.macd()
-        df['macd_signal'] = macd_indicator.macd_signal()
-        df['macd_hist'] = macd_indicator.macd_diff()
-        
-        # ATR (14) - ใช้ AverageTrueRange จาก ta.volatility
-        atr_indicator = AverageTrueRange(high=df['high'], low=df['low'], close=df['close'], window=14, fillna=False)
-        df['atr'] = atr_indicator.average_true_range()
-        
-        # EMA 20 - ใช้ EMAIndicator จาก ta.trend
-        ema_indicator = EMAIndicator(close=df['close'], window=20, fillna=False)
-        df['ema20'] = ema_indicator.ema_indicator()
-        
-        logging.info("คำนวณ Indicators สำเร็จ (ta library)"); console.print("[green]คำนวณ Indicators สำเร็จ (ta library)[/green]")
-        return df
-    except Exception as e:
-        console.print(f"[red]เกิดข้อผิดพลาด: {e}[/red]")
-        import traceback
-        traceback.print_exc()
-        return df
-# ============================================================
-# Section 2: Fibonacci & VPVR
-# ============================================================
 
-def find_swing_high_low(df: pd.DataFrame, lookback: int = SWING_LOOKBACK) -> Tuple[float, float, int, int]:
-    """หา Swing High และ Swing Low"""
-    if len(df) < lookback * 2 + 1:
-        return float(df['high'].max()), float(df['low'].min()), 0, 0
-    highs, lows = df['high'].values, df['low'].values
-    n = len(df)
-    sh_val, sl_val = -np.inf, np.inf
-    sh_idx, sl_idx = 0, 0
-    for i in range(lookback, n - lookback):
-        is_high = all(highs[j] <= highs[i] for j in range(max(0, i-lookback), min(n, i+lookback+1)) if j != i)
-        is_low = all(lows[j] >= lows[i] for j in range(max(0, i-lookback), min(n, i+lookback+1)) if j != i)
-        if is_high and highs[i] > sh_val:
-            sh_val, sh_idx = highs[i], i
-        if is_low and lows[i] < sl_val:
-            sl_val, sl_idx = lows[i], i
-    return float(sh_val), float(sl_val), sh_idx, sl_idx
-
-def calculate_fibonacci_levels(swing_high: float, swing_low: float) -> Dict[str, float]:
-    """คำนวณ Fibonacci Levels"""
-    diff = swing_high - swing_low
-    return {
-        'swing_high': swing_high, 'swing_low': swing_low,
-        'fib_382': swing_high - diff * 0.382, 'fib_500': swing_high - diff * 0.500,
-        'fib_618': swing_high - diff * 0.618, 'fib_786': swing_high - diff * 0.786,
-        'ext_1272': swing_high + diff * 1.272, 'ext_1618': swing_high + diff * 1.618,
-    }
-
-def calculate_vpvr(df: pd.DataFrame, bins: int = VPVR_BINS, value_area_pct: float = VALUE_AREA_PCT) -> Dict[str, Any]:
-    """คำนวณ Volume Profile (VPVR)"""
-    if len(df) < 2:
-        return {}
-    min_p, max_p = float(df['low'].min()), float(df['high'].max())
-    if max_p == min_p:
-        return {}
-    price_bins = np.linspace(min_p, max_p, bins + 1)
-    vol_profile = np.zeros(bins)
-    for _, row in df.iterrows():
-        lb = int(np.searchsorted(price_bins, row['low'], side='right') - 1)
-        hb = int(np.searchsorted(price_bins, row['high'], side='right') - 1)
-        lb, hb = max(0, min(lb, bins-1)), max(0, min(hb, bins-1))
-        if hb == lb:
-            vol_profile[lb] += row['volume']
-        else:
-            vp = row['volume'] / (hb - lb + 1)
-            for b in range(lb, hb + 1):
-                vol_profile[b] += vp
-    poc_idx = np.argmax(vol_profile)
-    poc = (price_bins[poc_idx] + price_bins[poc_idx + 1]) / 2
-    total_vol = np.sum(vol_profile)
-    target_vol = total_vol * value_area_pct
-    va_vol = vol_profile[poc_idx]
-    va_l, va_h = poc_idx, poc_idx
-    while va_vol < target_vol and (va_l > 0 or va_h < bins - 1):
-        lv = vol_profile[va_l - 1] if va_l > 0 else -1
-        rv = vol_profile[va_h + 1] if va_h < bins - 1 else -1
-        if lv >= rv and va_l > 0:
-            va_l -= 1
-            va_vol += lv
-        elif va_h < bins - 1:
-            va_h += 1
-            va_vol += rv
-        else:
-            break
-    return {
-        'poc': poc, 'vah': (price_bins[va_h] + price_bins[va_h + 1]) / 2,
-        'val': (price_bins[va_l] + price_bins[va_l + 1]) / 2,
-        'total_volume': float(total_vol),
-    }
-
-
-# ============================================================
-# Section 2: Fibonacci & VPVR
-# ============================================================
-
-def find_swing_high_low(df: pd.DataFrame, lookback: int = SWING_LOOKBACK) -> Tuple[float, float, int, int]:
-    """หา Swing High และ Swing Low"""
-    if len(df) < lookback * 2 + 1:
-        return float(df['high'].max()), float(df['low'].min()), 0, 0
-    highs, lows = df['high'].values, df['low'].values
-    n = len(df)
-    sh_val, sl_val = -np.inf, np.inf
-    sh_idx, sl_idx = 0, 0
-    for i in range(lookback, n - lookback):
-        is_high = all(highs[j] <= highs[i] for j in range(max(0, i-lookback), min(n, i+lookback+1)) if j != i)
-        is_low = all(lows[j] >= lows[i] for j in range(max(0, i-lookback), min(n, i+lookback+1)) if j != i)
-        if is_high and highs[i] > sh_val:
-            sh_val, sh_idx = highs[i], i
-        if is_low and lows[i] < sl_val:
-            sl_val, sl_idx = lows[i], i
-    return float(sh_val), float(sl_val), sh_idx, sl_idx
-
-def calculate_fibonacci_levels(swing_high: float, swing_low: float) -> Dict[str, float]:
-    """คำนวณ Fibonacci Levels"""
-    diff = swing_high - swing_low
-    return {
-        'swing_high': swing_high, 'swing_low': swing_low,
-        'fib_382': swing_high - diff * 0.382, 'fib_500': swing_high - diff * 0.500,
-        'fib_618': swing_high - diff * 0.618, 'fib_786': swing_high - diff * 0.786,
-        'ext_1272': swing_high + diff * 1.272, 'ext_1618': swing_high + diff * 1.618,
-    }
-
-def calculate_vpvr(df: pd.DataFrame, bins: int = VPVR_BINS, value_area_pct: float = VALUE_AREA_PCT) -> Dict[str, Any]:
-    """คำนวณ Volume Profile (VPVR)"""
-    if len(df) < 2:
-        return {}
-    min_p, max_p = float(df['low'].min()), float(df['high'].max())
-    if max_p == min_p:
-        return {}
-    price_bins = np.linspace(min_p, max_p, bins + 1)
-    vol_profile = np.zeros(bins)
-    for _, row in df.iterrows():
-        lb = int(np.searchsorted(price_bins, row['low'], side='right') - 1)
-        hb = int(np.searchsorted(price_bins, row['high'], side='right') - 1)
-        lb, hb = max(0, min(lb, bins-1)), max(0, min(hb, bins-1))
-        if hb == lb:
-            vol_profile[lb] += row['volume']
-        else:
-            vp = row['volume'] / (hb - lb + 1)
-            for b in range(lb, hb + 1):
-                vol_profile[b] += vp
-    poc_idx = np.argmax(vol_profile)
-    poc = (price_bins[poc_idx] + price_bins[poc_idx + 1]) / 2
-    total_vol = np.sum(vol_profile)
-    target_vol = total_vol * value_area_pct
-    va_vol = vol_profile[poc_idx]
-    va_l, va_h = poc_idx, poc_idx
-    while va_vol < target_vol and (va_l > 0 or va_h < bins - 1):
-        lv = vol_profile[va_l - 1] if va_l > 0 else -1
-        rv = vol_profile[va_h + 1] if va_h < bins - 1 else -1
-        if lv >= rv and va_l > 0:
-            va_l -= 1
-            va_vol += lv
-        elif va_h < bins - 1:
-            va_h += 1
-            va_vol += rv
-        else:
-            break
-    return {
-        'poc': poc, 'vah': (price_bins[va_h] + price_bins[va_h + 1]) / 2,
-        'val': (price_bins[va_l] + price_bins[va_l + 1]) / 2,
-        'total_volume': float(total_vol),
-    }
-
-
-# ============================================================
-# Section 3: AI Integration
-# ============================================================
-
-def build_ai_context(data: TradingData) -> str:
-    """สร้าง Context ข้อมูลทั้งหมดสำหรับส่งให้ AI"""
-    ctx = []
-    ctx.append(f"SYMBOL: {SYMBOL}")
-    ctx.append(f"TIMEFRAME: {TIMEFRAME}")
-    ctx.append(f"CURRENT PRICE: {data.latest_close:.2f}")
-    ctx.append("")
-    
-    if data.indicators:
-        ctx.append("=== TECHNICAL INDICATORS ===")
-        for k, v in data.indicators.items():
-            if v is not None and not pd.isna(v):
-                ctx.append(f"{k.upper()}: {v:.4f}")
-        ctx.append("")
-    
-    if data.patterns:
-        ctx.append("=== CANDLESTICK PATTERNS ===")
-        for k, v in data.patterns.items():
-            if isinstance(v, bool):
-                ctx.append(f"{k.replace('_', ' ').title()}: {'DETECTED' if v else 'None'}")
-            elif k == 'latest_pattern' and v != 'None':
-                ctx.append(f"Latest Pattern: {v}")
-        ctx.append("")
-    
-    if data.fibonacci:
-        ctx.append("=== FIBONACCI RETRACEMENT ===")
-        for k in ['fib_382', 'fib_500', 'fib_618', 'fib_786']:
-            if k in data.fibonacci:
-                ctx.append(f"Fib {k.replace('fib_', '')}: {data.fibonacci[k]:.2f}")
-        ctx.append("=== FIBONACCI EXTENSION (TP TARGETS) ===")
-        for k in ['ext_1272', 'ext_1618']:
-            if k in data.fibonacci:
-                ctx.append(f"Extension {k.replace('ext_', '')}: {data.fibonacci[k]:.2f}")
-        ctx.append("")
-    
-    if data.vpvr:
-        ctx.append("=== VOLUME PROFILE (VPVR) ===")
-        ctx.append(f"POC (Point of Control): {data.vpvr.get('poc', 0):.2f}")
-        ctx.append(f"VAH (Value Area High): {data.vpvr.get('vah', 0):.2f}")
-        ctx.append(f"VAL (Value Area Low): {data.vpvr.get('val', 0):.2f}")
-        ctx.append("")
-    
-    if 'atr' in data.indicators:
-        ctx.append(f"ATR (14): {data.indicators['atr']:.4f}")
-        ctx.append(f"SL Buffer (0.5 * ATR): {data.indicators['atr'] * 0.5:.4f}")
-        ctx.append("")
-    
-    return "\n".join(ctx)
-
-
-# ============================================================
-# Smart Trigger Functions
-# ============================================================
-
-def check_smart_trigger(data, df) -> tuple:
-    """
-    ตรวจสอบว่าควรส่ง AI หรือไม่ (Smart Trigger)
-    Returns: (should_trigger: bool, reason: str)
-    """
-    reasons = []
-    indicators = data.indicators
-    close = data.latest_close
-
-    # 1. RSI Extreme
-    if TRIGGER_RSI_EXTREME:
-        rsi = indicators.get('rsi', 50)
-        if rsi < RSI_OVERSOLD:
-            reasons.append(f"RSI Oversold ({rsi:.1f} < {RSI_OVERSOLD})")
-        elif rsi > RSI_OVERBOUGHT:
-            reasons.append(f"RSI Overbought ({rsi:.1f} > {RSI_OVERBOUGHT})")
-
-    # 2. Pattern Detected
-    if TRIGGER_PATTERN and data.patterns:
-        bull_signals = sum(1 for k, v in data.patterns.items() if v and 'bull' in k.lower())
-        bear_signals = sum(1 for k, v in data.patterns.items() if v and 'bear' in k.lower())
-        if bull_signals > 0:
-            reasons.append(f"Bullish Pattern ({bull_signals} detected)")
-        if bear_signals > 0:
-            reasons.append(f"Bearish Pattern ({bear_signals} detected)")
-
-    # 3. MACD Crossover
-    if TRIGGER_MACD_CROSS:
-        macd_line = indicators.get('macd_line', 0)
-        macd_signal = indicators.get('macd_signal', 0)
-        if len(df) >= 2:
-            prev_macd = df['macd_line'].iloc[-2] if 'macd_line' in df else 0
-            prev_signal = df['macd_signal'].iloc[-2] if 'macd_signal' in df else 0
-            if prev_macd <= prev_signal and macd_line > macd_signal:
-                reasons.append("MACD Bullish Crossover")
-            elif prev_macd >= prev_signal and macd_line < macd_signal:
-                reasons.append("MACD Bearish Crossover")
-
-    # 4. Near Key Level
-    if TRIGGER_NEAR_LEVEL and close:
-        all_levels = []
-        if data.fibonacci:
-            for k in ['fib_382', 'fib_500', 'fib_618']:
-                if k in data.fibonacci:
-                    all_levels.append(data.fibonacci[k])
-        if data.vpvr:
-            for k in ['poc', 'vah', 'val']:
-                if k in data.vpvr:
-                    all_levels.append(data.vpvr[k])
-        for level in all_levels:
-            distance_pct = abs(close - level) / close * 100
-            if distance_pct < LEVEL_DISTANCE_PCT:
-                reasons.append(f"Near Key Level (${level:.0f}, {distance_pct:.2f}%)")
-                break
-
-    # 5. High Volatility
-    if TRIGGER_HIGH_VOLATILITY:
-        atr = indicators.get('atr', 0)
-        if atr > 0 and close > 0:
-            atr_pct = atr / close * 100
-            if atr_pct > ATR_HIGH_PCT:
-                reasons.append(f"High Volatility (ATR {atr_pct:.2f}% > {ATR_HIGH_PCT}%)")
-
-    # 6. Big Move
-    if TRIGGER_BIG_MOVE and len(df) >= 2:
-        prev_close = df['close'].iloc[-2]
-        price_change = abs(close - prev_close) / prev_close * 100
-        if price_change > BIG_MOVE_PCT:
-            reasons.append(f"Big Move ({price_change:.2f}% change)")
-
-    should_trigger = len(reasons) > 0
-    reason_str = " | ".join(reasons) if reasons else "No trigger"
-    return should_trigger, reason_str
-
-
-def call_openrouter_ai(context: str) -> str:
-    """เรียก OpenRouter API"""
-    if not OPENROUTER_API_KEY:
-        return "[ERROR] OPENROUTER_API_KEY ไม่ได้ตั้งค่าใน .env"
-    try:
-        client = OpenAI(api_key=OPENROUTER_API_KEY, base_url=OPENROUTER_BASE_URL)
-        response = client.chat.completions.create(
-            model=OPENROUTER_MODEL,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": context},
-            ],
-            temperature=0.3, max_tokens=2500,
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"[ERROR] OpenRouter API: {e}"
-
-
-# ============================================================
-# Cooldown Tracker
-# ============================================================
-import time as time_module
-
-class CooldownTracker:
-    """Track AI calls for cooldown"""
-    def __init__(self):
-        self.last_ai_time = 0
-        self.ai_count_this_hour = 0
-        self.hour_start = time_module.time()
-    
-    def can_send(self) -> tuple:
-        """ตรวจสอบว่าส่ง AI ได้หรือไม่"""
-        current = time_module.time()
-        # Reset counter ทุกชั่วโมง
-        if current - self.hour_start >= 3600:
-            self.ai_count_this_hour = 0
-            self.hour_start = current
-        # ตรวจสอบ cooldown วินาที
-        time_since_last = current - self.last_ai_time
-        if self.last_ai_time > 0 and time_since_last < AI_COOLDOWN_SECONDS:
-            remaining = int(AI_COOLDOWN_SECONDS - time_since_last)
-            return False, f"Cooldown ({remaining}s remaining)"
-        # ตรวจสอบจำนวนครั้ง/ชั่วโมง
-        if self.ai_count_this_hour >= AI_COOLDOWN_MAX_PER_HOUR:
-            return False, f"Hourly limit ({self.ai_count_this_hour}/{AI_COOLDOWN_MAX_PER_HOUR})"
-        return True, "OK"
-    
-    def record_send(self):
-        """บันทึกการส่ง AI"""
-        self.last_ai_time = time_module.time()
-        self.ai_count_this_hour += 1
-
-
-def should_send_ai(data, df, cooldown_tracker: CooldownTracker) -> tuple:
-    """
-    ตรวจสอบรวมว่าควรส่ง AI หรือไม่
-    Returns: (should_send: bool, reason: str, trigger_type: str)
-    """
-    # ตรวจ Cooldown ก่อน
-    can_send, cooldown_reason = cooldown_tracker.can_send()
-    if not can_send:
-        return False, cooldown_reason, "COOLDOWN"
-    # ตรวจ Smart Trigger
-    should_trigger, trigger_reason = check_smart_trigger(data, df)
-    if should_trigger:
-        return True, trigger_reason, "SMART_TRIGGER"
-    return False, "No trigger conditions", "NONE"
-
-
-# ============================================================
-
-
-# ============================================================
-# Main Process
-# ============================================================
-
-# Global cooldown tracker
 _cooldown_tracker = CooldownTracker()
 
 def run_analysis():
     """รันกระบวนการวิเคราะห์ทั้งหมด"""
     data = TradingData()
     try:
-        logging.info("="*60); logging.info("STEP 1: ดึงข้อมูลตลาด"); console.print("[bold]Step 1:[/bold] ดึงข้อมูลตลาด...")
+        # STEP 1: ดึงข้อมูล
+        logging.info("STEP 1: ดึงข้อมูลตลาด")
+        console.print("[bold]Step 1:[/bold] ดึงข้อมูลตลาด...")
         df = fetch_market_data(SYMBOL, TIMEFRAME, CANDLE_LIMIT)
         if df is None or df.empty:
             console.print("[red]ไม่สามารถดึงข้อมูลได้[/red]")
             return
         data.df = df
         data.latest_close = float(df['close'].iloc[-1])
+        console.print(f"  [green]✓[/green] {len(df)} แท่ง, Price: ${data.latest_close:,.2f}")
         
-        logging.info("STEP 2: คำนวณ Indicators"); console.print("[bold]Step 2:[/bold] คำนวณ Indicators...")
+        # STEP 2: Indicators
+        logging.info("STEP 2: คำนวณ Indicators")
+        console.print("[bold]Step 2:[/bold] คำนวณ Indicators...")
         df = calculate_indicators(df)
         data.indicators = {
             'rsi': df['rsi'].iloc[-1] if 'rsi' in df else None,
@@ -657,49 +146,73 @@ def run_analysis():
             'atr': df['atr'].iloc[-1] if 'atr' in df else None,
             'ema20': df['ema20'].iloc[-1] if 'ema20' in df else None,
         }
+        console.print(f"  [green]✓[/green] RSI: {data.indicators['rsi']:.1f}, MACD: {data.indicators['macd_hist']:+.2f}")
         
-        logging.info("STEP 3: ตรวจจับ Candlestick Patterns"); console.print("[bold]Step 3:[/bold] ตรวจจับ Candlestick Patterns...")
+        # STEP 3: Patterns
+        logging.info("STEP 3: ตรวจจับ Candlestick Patterns")
+        console.print("[bold]Step 3:[/bold] ตรวจจับ Candlestick Patterns...")
         data.patterns = detect_candlestick_patterns(df)
+        bull = sum(1 for k, v in data.patterns.items() if v and 'bull' in k.lower())
+        bear = sum(1 for k, v in data.patterns.items() if v and 'bear' in k.lower())
+        console.print(f"  [green]✓[/green] Bull: {bull} | Bear: {bear}")
         
-        logging.info("STEP 4: คำนวณ Fibonacci Levels"); console.print("[bold]Step 4:[/bold] คำนวณ Fibonacci Levels...")
-        sh, sl, _, _ = find_swing_high_low(df)
+        # STEP 4: Fibonacci
+        logging.info("STEP 4: คำนวณ Fibonacci Levels")
+        console.print("[bold]Step 4:[/bold] คำนวณ Fibonacci Levels...")
+        sh, sl, _, _ = find_swing_high_low(df, SWING_LOOKBACK)
         data.fibonacci = calculate_fibonacci_levels(sh, sl)
+        if data.fibonacci:
+            console.print(f"  [green]✓[/green] Fib 0.618: ${data.fibonacci.get('fib_618', 0):.2f}")
         
-        logging.info("STEP 5: คำนวณ Volume Profile (VPVR)"); console.print("[bold]Step 5:[/bold] คำนวณ Volume Profile (VPVR)...")
-        data.vpvr = calculate_vpvr(df)
+        # STEP 5: VPVR
+        logging.info("STEP 5: คำนวณ Volume Profile")
+        console.print("[bold]Step 5:[/bold] คำนวณ Volume Profile (VPVR)...")
+        data.vpvr = calculate_vpvr(df, VPVR_BINS)
+        if data.vpvr:
+            console.print(f"  [green]✓[/green] POC: ${data.vpvr.get('poc', 0):.2f}")
         
-        # ============================================================
-        # STEP 6: ตรวจสอบ Trigger ก่อนส่ง AI
-        # ============================================================
+        # STEP 6: AI Trigger
         should_send, reason, trigger_type = should_send_ai(data, df, _cooldown_tracker)
-        
         if should_send:
-            logging.info(f"STEP 6: ส่งข้อมูลให้ AI วิเคราะห์ | Trigger: {trigger_type} | Reason: {reason}")
-            console.print(f"[bold]Step 6:[/bold] ส่งข้อมูลให้ AI วิเคราะห์... [green]({trigger_type})[/green]")
+            logging.info(f"STEP 6: ส่ง AI | {trigger_type} | {reason}")
+            console.print(f"[bold]Step 6:[/bold] ส่ง AI... [green]({trigger_type})[/green]")
             console.print(f"  [dim]{reason}[/dim]")
-            context = build_ai_context(data)
-            data.ai_analysis = call_openrouter_ai(context)
+            data.ai_analysis = call_openrouter_ai(build_ai_context(data))
             _cooldown_tracker.record_send()
-            console.print(f"  [green]✓ AI Analyzed[/green] (Used: {_cooldown_tracker.ai_count_this_hour}/{AI_COOLDOWN_MAX_PER_HOUR} this hour)")
+            console.print(f"  [green]✓ AI[/green] ({_cooldown_tracker.ai_count_this_hour}/{AI_COOLDOWN_MAX_PER_HOUR})")
         else:
-            logging.info(f"STEP 6: ข้ามการส่ง AI | Reason: {reason}")
-            console.print(f"[bold]Step 6:[/bold] [yellow]ข้าม AI (ไม่มี trigger หรือ cooldown)[/yellow]")
-            console.print(f"  [dim]Reason: {reason}[/dim]")
-            console.print(f"  [dim]Used: {_cooldown_tracker.ai_count_this_hour}/{AI_COOLDOWN_MAX_PER_HOUR} this hour[/dim]")
+            logging.info(f"STEP 6: ข้าม AI | {reason}")
+            console.print(f"[bold]Step 6:[/bold] [yellow]ข้าม AI[/yellow]")
+            console.print(f"  [dim]{reason}[/dim]")
             data.ai_analysis = f"[AI Skipped: {reason}]"
         
-        logging.info("STEP 7: แสดงผล"); console.print("[bold]Step 7:[/bold] แสดงผล...")
+        # STEP 7: Display
+        logging.info("STEP 7: แสดงผล")
+        console.print("[bold]Step 7:[/bold] แสดงผล...")
         display_rich_ui_new(data, SYMBOL, TIMEFRAME, DISPLAY_MODE)
+        
     except Exception as e:
-        console.print(f"[red]เกิดข้อผิดพลาด: {e}[/red]")
-        console.print(f"[red]{traceback.format_exc()}[/red]")
+        logging.error(f"Error: {e}")
+        console.print(f"[red]Error: {e}[/red]")
+
 
 def main():
-    """Entry Point"""
-    logging.info(f"=== AI CRYPTO TRADING MONITOR v1.0 STARTED | {SYMBOL} {TIMEFRAME} | Mode={TEST_MODE} ==="); console.print("[bold green]========================================[/bold green]")
-    console.print("[bold green]  AI CRYPTO TRADING MONITOR v1.0[/bold green]")
-    console.print("[bold green]========================================[/bold green]")
-    console.print(f"Symbol: {SYMBOL} | Timeframe: {TIMEFRAME} | Mode: {'TEST' if TEST_MODE else 'SCHEDULED'}")
+    setup_logging()
+    logging.info(f"=== MONITOR STARTED | {SYMBOL} {TIMEFRAME} | Mode={TEST_MODE} ===")
+    console.print("[bold green]=== AI CRYPTO TRADING MONITOR v1.3 ===[/bold green]")
+    console.print(f"Symbol: {SYMBOL} | Timeframe: {TIMEFRAME}")
+    
+    # Triggers info
+    console.print("[bold]📊 Smart Triggers:[/bold]")
+    t = []
+    if TRIGGER_RSI_EXTREME: t.append(f"RSI <{RSI_OVERSOLD}/ >{RSI_OVERBOUGHT}")
+    if TRIGGER_PATTERN: t.append("Pattern")
+    if TRIGGER_MACD_CROSS: t.append("MACD Cross")
+    if TRIGGER_NEAR_LEVEL: t.append(f"Near ±{LEVEL_DISTANCE_PCT}%")
+    if TRIGGER_HIGH_VOLATILITY: t.append(f"Vol >{ATR_HIGH_PCT}%")
+    if TRIGGER_BIG_MOVE: t.append(f"Move >{BIG_MOVE_PCT}%")
+    console.print(f"  [cyan]{', '.join(t)}[/cyan]")
+    console.print(f"[dim]Cooldown: {AI_COOLDOWN_MAX_PER_HOUR}/hr, min {AI_COOLDOWN_SECONDS}s[/dim]")
     console.print("")
     
     if TEST_MODE:
@@ -707,103 +220,13 @@ def main():
     else:
         scheduler = BlockingScheduler()
         scheduler.add_job(run_analysis, CronTrigger(minute=0))
-        console.print("[yellow]Scheduler started - รันทุกต้นชั่วโมง[/yellow]")
+        console.print("[yellow]Scheduler started[/yellow]")
         try:
             run_analysis()
             scheduler.start()
         except (KeyboardInterrupt, SystemExit):
-            console.print("[yellow]Scheduler stopped[/yellow]")
-
-
-# ============================================================
-# Section 4: Rich UI Display
-# ============================================================
-
-def display_rich_ui(data: TradingData):
-    """แสดงผล Rich UI บน Terminal"""
-    console.clear()
-    console.print(Panel.fit(
-        f"[bold cyan]AI CRYPTO TRADING MONITOR[/bold cyan] | {SYMBOL} {TIMEFRAME}",
-        border_style="cyan"
-    ))
-    console.print("")
-    
-    # Table 1: Market & Indicators
-    table1 = Table(title="[bold]Market & Indicators[/bold]", box=box.ROUNDED)
-    table1.add_column("Metric", style="cyan", width=20)
-    table1.add_column("Value", style="white", width=15)
-    table1.add_column("Signal", style="yellow", width=15)
-    
-    rsi = data.indicators.get('rsi', 0) or 0
-    rsi_sig = "Overbought" if rsi > 70 else "Oversold" if rsi < 30 else "Neutral"
-    macd_hist = data.indicators.get('macd_hist', 0) or 0
-    macd_sig = "Bullish" if macd_hist > 0 else "Bearish"
-    
-    table1.add_row("Price", f"${data.latest_close:.2f}", "-")
-    table1.add_row("RSI (14)", f"{rsi:.2f}", rsi_sig)
-    table1.add_row("MACD Hist", f"{macd_hist:.4f}", macd_sig)
-    table1.add_row("ATR (14)", f"{data.indicators.get('atr', 0):.4f}", "-")
-    table1.add_row("EMA 20", f"${data.indicators.get('ema20', 0):.2f}", "-")
-    console.print(table1)
-    console.print("")
-    
-    # Table 2: Key Levels
-    table2 = Table(title="[bold]Key Levels (Fibonacci & VPVR)[/bold]", box=box.ROUNDED)
-    table2.add_column("Level", style="cyan", width=15)
-    table2.add_column("Price", style="white", width=15)
-    table2.add_column("Distance %", style="yellow", width=15)
-    
-    for k, label in [('fib_382', 'Fib 0.382'), ('fib_500', 'Fib 0.500'), 
-                     ('fib_618', 'Fib 0.618'), ('poc', 'POC'), ('vah', 'VAH'), ('val', 'VAL')]:
-        if k in data.fibonacci:
-            v = data.fibonacci[k]
-            table2.add_row(label, f"${v:.2f}", f"{((data.latest_close - v) / v * 100):+.2f}%")
-        elif k in data.vpvr:
-            v = data.vpvr[k]
-            table2.add_row(label, f"${v:.2f}", f"{((data.latest_close - v) / v * 100):+.2f}%")
-    console.print(table2)
-    console.print("")
-    
-    # Table 3: Candlestick Patterns
-    table3 = Table(title="[bold]Candlestick Patterns[/bold]", box=box.ROUNDED)
-    table3.add_column("Pattern", style="cyan", width=25)
-    table3.add_column("Status", style="white", width=15)
-    
-    # All 11 patterns to display
-    all_patterns = [
-        ('bullish_engulfing', 'Bullish Engulfing'),
-        ('bearish_engulfing', 'Bearish Engulfing'),
-        ('bullish_pin_bar', 'Bullish Pin Bar'),
-        ('bearish_pin_bar', 'Bearish Pin Bar'),
-        ('doji', 'Doji'),
-        ('hammer', 'Hammer'),
-        ('inverted_hammer', 'Inverted Hammer'),
-        ('shooting_star', 'Shooting Star'),
-        ('hanging_man', 'Hanging Man'),
-        ('piercing_line', 'Piercing Line'),
-        ('dark_cloud_cover', 'Dark Cloud Cover'),
-    ]
-    for k, label in all_patterns:
-        if k in data.patterns:
-            status = "[green]DETECTED[/green]" if data.patterns[k] else "[dim]None[/dim]"
-            table3.add_row(label, status)
-    bull = len(data.patterns.get('bullish_signals', []))
-    bear = len(data.patterns.get('bearish_signals', []))
-    table3.add_row("[bold]Summary[/bold]", f"[yellow]Bull: {bull} | Bear: {bear}[/yellow]")
-    console.print(table3)
-    console.print("")
-    
-    if data.ai_analysis:
-        console.print(Panel.fit(
-            data.ai_analysis,
-            title="[bold cyan]AI Analysis & Trading Plan[/bold cyan]",
-            border_style="green", padding=(1, 2)
-        ))
-    console.print(f"[dim]Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}[/dim]")
+            console.print("[yellow]Stopped[/yellow]")
 
 
 if __name__ == "__main__":
     main()
-
-
-
