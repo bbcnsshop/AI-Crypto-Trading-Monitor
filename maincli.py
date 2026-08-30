@@ -9,13 +9,18 @@
     python maincli.py backtest
     python maincli.py config
 """
-import os, logging, time
+import os, logging, time, warnings
 from datetime import datetime
 import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich import box
+
+# Suppress SSL warnings (urllib3 + LibreSSL on macOS)
+warnings.filterwarnings('ignore', message='.*OpenSSL.*')
+logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+os.environ['PYTHONWARNINGS'] = 'ignore'
 
 console = Console()
 
