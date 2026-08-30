@@ -18,6 +18,9 @@ openai>=1.0.0
 # Terminal UI
 rich>=13.0.0
 
+# CLI
+click>=8.0.0
+
 # Scheduling
 apscheduler>=3.10.0
 

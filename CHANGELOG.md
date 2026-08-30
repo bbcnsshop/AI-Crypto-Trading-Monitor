@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] - 2026-08-30
+
+### ✨ Added
+
+#### 🖥️ CLI Interface (`maincli.py`)
+- **แยกออกจาก main.py** - ใช้ module display เดิมทั้งหมด
+- **5 คำสั่งหลัก**:
+  - `analyze` - วิเคราะห์ตลาดครั้งเดียว พร้อม options `--symbol`, `--timeframe`, `--mode`
+  - `monitor` - วิเคราะห์ต่อเนื่องทุก X นาที (รองรับ `--max-runs`)
+  - `backtest` - Quick Backtest ด้วย candles
+  - `config` - แสดง Configuration
+  - `symbols` - แสดงรายการ Symbols ยอดนิยม
+- **Built with Click** - รองรับ `--help` ทุกคำสั่ง
+
+#### 📦 Dependencies
+- `click>=8.0.0` เพิ่มใน requirements.txt
+
+### 📝 Changed
+- `maincli.py` - ไฟล์ใหม่ (220 บรรทัด)
+- ใช้ `display_rich_ui()` และ `display_config()` เดิม
+- `main.py` - เก็บไว้สำหรับ backward compatibility
+
+---
+
 ## [1.4.2] - 2026-08-30
 
 ### ✨ Added
