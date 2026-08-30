@@ -185,31 +185,116 @@ def analyze(symbol, timeframe, mode):
 @cli.command()
 @click.option('--symbol', '-s', default='BTC/USDT', help='Symbol')
 @click.option('--timeframe', '-t', default='1h', help='Timeframe')
-@click.option('--interval', '-i', default=60, type=int, help='วิเคราะห์ทุกกี่นาที')
-@click.option('--mode', '-m', default='standard', help='Display mode')
-@click.option('--max-runs', '-n', default=None, type=int, help='จำนวนครั้งสูงสุด')
-def monitor(symbol, timeframe, interval, mode, max_runs):
-    """วิเคราะห์ต่อเนื่องทุก X นาที"""
+@click.option('--interval', '-i', default=5, type=int, help='เช็คทุกกี่นาที')
+@click.option('--mode', '-m', default='compact', help='Display mode (เมื่อ trigger ทำงาน)')
+@click.option('--max-runs', '-n', default=None, type=int, help='จำนวนรอบสูงสุด (None=ไม่จำกัด)')
+@click.option('--once', is_flag=True, help='เช็คครั้งเดียวแล้วออก (debug)')
+def monitor(symbol, timeframe, interval, mode, max_runs, once):
+    """Monitor ตลาด - แสดงสถานะ และวิเคราะห์เฉพาะเมื่อ Smart Trigger ทำงาน"""
     console.print(Panel.fit(
-        f"[bold yellow]Monitor Mode[/bold yellow] | {symbol} {timeframe} | ทุก {interval} นาที",
+        f"[bold yellow]👁️ Monitor Mode[/bold yellow] | {symbol} {timeframe} | เช็คทุก {interval} นาที",
         border_style="yellow"
     ))
+    console.print(f"[dim]Trigger Mode: {AI_TRIGGER_MODE.upper()} | Cooldown: {AI_COOLDOWN_MAX_PER_HOUR}/hr[/dim]")
     console.print("[dim]กด Ctrl+C เพื่อหยุด[/dim]\n")
-    run_count = 0
+
+    cooldown_tracker = CooldownTracker()
+    check_count = 0
+    trigger_count = 0
+
     try:
         while True:
-            run_count += 1
-            console.print(f"\n[cyan]รอบที่ {run_count} | {datetime.now().strftime('%H:%M:%S')}[/cyan]")
-            data = analyze_market(symbol, timeframe)
-            if data.latest_close > 0:
-                display_rich_ui(data, symbol, timeframe, mode)
-            if max_runs and run_count >= max_runs:
-                console.print(f"\n[green]เสร็จสิ้น {max_runs} รอบ[/green]")
+            check_count += 1
+            now = datetime.now().strftime('%H:%M:%S')
+            console.rule(f"[cyan]เช็ครอบที่ {check_count} | {now}[/cyan]")
+
+            # ดึงข้อมูล + คำนวณ indicators
+            df = fetch_data(symbol, timeframe, CANDLE_LIMIT)
+            if df is None:
+                console.print(f"[red]❌ ดึงข้อมูลไม่สำเร็จ[/red]")
+                if once:
+                    break
+                time.sleep(interval * 60)
+                continue
+
+            # สร้าง data object (ไม่เรียก AI)
+            data = MarketData()
+            data.symbol = symbol
+            data.timeframe = timeframe
+            data.latest_close = df['close'].iloc[-1]
+            data.price_change_pct = ((df['close'].iloc[-1] - df['close'].iloc[-2]) / df['close'].iloc[-2]) * 100
+
+            # คำนวณ indicators (ดึงค่า scalar จาก Series)
+            indicators = calculate_indicators(df)
+            def get_val(key):
+                val = indicators.get(key, 0)
+                if hasattr(val, 'iloc') and len(val) > 0:
+                    return float(val.iloc[-1])
+                return float(val) if val != 0 else 0.0
+            data.rsi = get_val('rsi')
+            data.macd_hist = get_val('macd_hist')
+            data.atr = get_val('atr')
+            data.ema_20 = get_val('ema_20')
+
+            sh, sl, _, _ = find_swing_high_low(df, SWING_LOOKBACK)
+            data.fibonacci = calculate_fibonacci_levels(sh, sl)
+            data.vpvr = calculate_vpvr(df, VPVR_BINS)
+
+            # ตรวจ patterns
+            patterns = detect_candlestick_patterns(df)
+            bullish_count = sum(1 for p in patterns.values() if p and 'Bullish' in str(p) or p == 'Hammer' or p == 'Bullish Engulfing')
+            bearish_count = sum(1 for p in patterns.values() if p and 'Bearish' in str(p))
+            data.bullish_patterns = bullish_count
+            data.bearish_patterns = bearish_count
+
+            # แสดงสถานะ (ไม่เรียก AI)
+            price = data.latest_close
+            rsi = data.rsi
+            rsi_status = "Overbought" if rsi > 70 else "Oversold" if rsi < 30 else "Neutral"
+            macd_status = "Bullish" if data.macd_hist > 0 else "Bearish"
+
+            console.print(f"  💰 Price: [bold]${price:,.2f}[/bold] ({data.price_change_pct:+.2f}%)")
+            console.print(f"  📊 RSI: {rsi:.1f} ({rsi_status}) | MACD: {macd_status} | ATR: {data.atr:.2f}")
+
+            # เช็ค Smart Trigger
+            should_send, reason, trigger_type = check_trigger(data, df, cooldown_tracker)
+
+            if should_send:
+                trigger_count += 1
+                console.print(f"\n  [bold green]🚨 TRIGGER! {trigger_type}[/bold green]")
+                console.print(f"  [green]เหตุผล: {reason}[/green]")
+
+                # เรียก AI วิเคราะห์
+                console.print(f"  [cyan]🤖 กำลังเรียก AI...[/cyan]")
+                data.ai_analysis = call_openrouter_ai(build_ai_context(data))
+                cooldown_tracker.record_send()
+
+                if data.ai_analysis:
+                    # แสดงผลเต็ม
+                    display_rich_ui(data, symbol, timeframe, mode)
+                else:
+                    console.print(f"  [red]❌ AI วิเคราะห์ล้มเหลว[/red]")
+            else:
+                # ไม่ trigger - แสดงเหตุผล
+                console.print(f"  [dim]⏸️  {reason}[/dim]")
+
+            # สรุปสถานะ cooldown
+            can_send, cooldown_reason = cooldown_tracker.can_send()
+            status = "🟢 พร้อม" if can_send else "🟡 Cooldown"
+            console.print(f"  [dim]AI Status: {status} | ส่งไปแล้ว: {trigger_count} ครั้ง[/dim]")
+
+            if max_runs and check_count >= max_runs:
+                console.print(f"\n[green]เสร็จสิ้น {max_runs} รอบ (Trigger: {trigger_count} ครั้ง)[/green]")
                 break
-            console.print(f"\n[dim]รอ {interval} นาที... (Ctrl+C)[/dim]")
+
+            if once:
+                break
+
+            console.print(f"\n[dim]💤 รอ {interval} นาที... (Ctrl+C หยุด)[/dim]")
             time.sleep(interval * 60)
+
     except KeyboardInterrupt:
-        console.print(f"\n[yellow]หยุด (รัน {run_count} รอบ)[/yellow]")
+        console.print(f"\n[yellow]หยุด (เช็ค {check_count} รอบ, Trigger {trigger_count} ครั้ง)[/yellow]")
 
 
 @cli.command()
