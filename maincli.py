@@ -17,10 +17,17 @@ from rich.panel import Panel
 from rich.table import Table
 from rich import box
 
-# Suppress SSL warnings (urllib3 + LibreSSL on macOS)
+# ============================================================
+# Suppress SSL/urllib3 warnings (cross-platform safe)
+# - macOS (LibreSSL): จับด้วย pattern '.*OpenSSL.*'
+# - Windows/Linux: ไม่มี warning นี้ แต่ตัวกรองจะ no-op (ไม่กระทบ)
+# - ไม่ปิด warnings ทั้งหมด เพื่อไม่ให้พลาด warning สำคัญอื่นๆ
+# ============================================================
 warnings.filterwarnings('ignore', message='.*OpenSSL.*')
+warnings.filterwarnings('ignore', category=DeprecationWarning, module='urllib3')
 logging.getLogger('urllib3').setLevel(logging.CRITICAL)
-os.environ['PYTHONWARNINGS'] = 'ignore'
+logging.getLogger('httpx').setLevel(logging.WARNING)
+logging.getLogger('httpcore').setLevel(logging.WARNING)
 
 console = Console()
 
