@@ -61,8 +61,10 @@ def fetch_data(symbol, timeframe, limit=100):
         df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
         return df
+    except (KeyboardInterrupt, SystemExit):
+        raise
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        console.print(f"[red]Error fetching data: {e}[/red]")
         return None
 
 

@@ -2,7 +2,7 @@
 
 บอทสแกนกราฟคริปโต (BTC/USDT) ดึงข้อมูลจาก Binance คำนวณ Indicators (RSI, MACD, ATR, EMA), ตรวจจับ Candlestick Patterns (11 แบบ), Fibonacci และ VPVR แล้วส่งให้ AI วิเคราะห์จุดเข้า 3 ระดับ (3-Tier Entry) พร้อม TP/SL แสดงผลบน Terminal ด้วย Rich UI
 
-**เวอร์ชัน:** 1.4.2
+**เวอร์ชัน:** 1.5.1
 
 ---
 
@@ -25,7 +25,8 @@
 
 | ไฟล์ | คำอธิบาย |
 |-------|-----------|
-| `main.py` | Entry point + main loop |
+| `main.py` | Entry point + main loop (Full Version) |
+| `maincli.py` | CLI Interface (Click-based) |
 | `config.py` | Configuration ทั้งหมด |
 | `indicators.py` | Indicators, Fibonacci, VPVR |
 | `ai_trigger.py` | Smart Trigger + Cooldown System |
@@ -124,6 +125,7 @@ TEST_MODE = True                 # True = 1 รอบ, False = รันต่�
 
 ## ▶️ วิธีใช้งาน
 
+### 🖥️ แบบที่ 1: `main.py` (Full Version)
 ```bash
 # รันแบบ Test (1 รอบแล้วจบ)
 python3 main.py
@@ -132,6 +134,36 @@ python3 main.py
 # แก้ config.py: TEST_MODE = False
 python3 main.py
 ```
+
+### 🖥️ แบบที่ 2: `maincli.py` (CLI Interface - แนะนำ)
+```bash
+# ดูคำสั่งทั้งหมด
+python3 maincli.py --help
+
+# วิเคราะห์ครั้งเดียว
+python3 maincli.py analyze -s BTC/USDT -t 1h -m compact
+python3 maincli.py analyze -s ETH/USDT -t 4h -m standard
+
+# Monitor ต่อเนื่อง
+python3 maincli.py monitor -s BTC/USDT -t 1h -i 15 --max-runs 5
+
+# Quick Backtest
+python3 maincli.py backtest -s BNB/USDT -t 1h -l 100
+
+# แสดง Configuration
+python3 maincli.py config
+
+# แสดง Symbols ยอดนิยม
+python3 maincli.py symbols
+```
+
+| คำสั่ง | Options | คำอธิบาย |
+|--------|---------|----------|
+| `analyze` | `-s, --symbol` `-t, --timeframe` `-m, --mode` | วิเคราะห์ตลาดครั้งเดียว |
+| `monitor` | `-s, --symbol` `-t, --timeframe` `-i, --interval` `--max-runs` | วิเคราะห์ต่อเนื่อง |
+| `backtest` | `-s, --symbol` `-t, --timeframe` `-l, --limit` | Quick Backtest |
+| `config` | - | แสดงค่า Configuration |
+| `symbols` | - | แสดง Symbols ยอดนิยม |
 
 ---
 
@@ -297,6 +329,13 @@ pip3 install -r requirements.txt
 brew install openssl@3
 ```
 
+### SSL Warning (urllib3 + LibreSSL)
+โปรแกรมนี้ suppress warning เรียบร้อยแล้ว (macOS, Linux, Windows)  
+ถ้ายังเจอ warning ให้ลอง:
+```bash
+pip3 install --upgrade urllib3 certifi
+```
+
 ---
 
 ## ⚠️ คำเตือน
@@ -326,6 +365,6 @@ brew install openssl@3
 
 ---
 
-**เวอร์ชัน:** 1.4.2  
+**เวอร์ชัน:** 1.5.1  
 **อัปเดตล่าสุด:** 2026-08-30  
 **GitHub:** https://github.com/bbcnsshop/AI-Crypto-Trading-Monitor
