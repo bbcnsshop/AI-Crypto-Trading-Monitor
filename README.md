@@ -2,7 +2,7 @@
 
 บอทสแกนกราฟคริปโต (BTC/USDT) ดึงข้อมูลจาก Binance คำนวณ Indicators (RSI, MACD, ATR, EMA), ตรวจจับ Candlestick Patterns (11 แบบ), Fibonacci และ VPVR แล้วส่งให้ AI วิเคราะห์จุดเข้า 3 ระดับ (3-Tier Entry) พร้อม TP/SL แสดงผลบน Terminal ด้วย Rich UI
 
-**เวอร์ชัน:** 1.5.1
+**เวอร์ชัน:** 1.5.2
 
 ---
 
@@ -378,8 +378,9 @@ python3 maincli.py --help
 python3 maincli.py analyze -s BTC/USDT -t 1h -m compact
 python3 maincli.py analyze -s ETH/USDT -t 4h -m standard
 
-# Monitor ต่อเนื่อง
-python3 maincli.py monitor -s BTC/USDT -t 1h -i 15 --max-runs 5
+# Monitor ต่อเนื่อง (แนะนำ)
+# ดูสถานะตลาดทุก 5 นาที และเรียก AI เฉพาะเมื่อ trigger
+python3 maincli.py monitor -s BTC/USDT -t 1h -i 5 --max-runs 100
 
 # Quick Backtest
 python3 maincli.py backtest -s BNB/USDT -t 1h -l 100
@@ -394,7 +395,7 @@ python3 maincli.py symbols
 | คำสั่ง | Options | คำอธิบาย |
 |--------|---------|----------|
 | `analyze` | `-s, --symbol` `-t, --timeframe` `-m, --mode` | วิเคราะห์ตลาดครั้งเดียว |
-| `monitor` | `-s, --symbol` `-t, --timeframe` `-i, --interval` `--max-runs` | วิเคราะห์ต่อเนื่อง |
+| `monitor` | `-s, --symbol` `-t, --timeframe` `-i, --interval` `-n, --max-runs` `--once` `-m, --mode` | Monitor และวิเคราะห์เฉพาะ trigger |
 | `backtest` | `-s, --symbol` `-t, --timeframe` `-l, --limit` | Quick Backtest |
 | `config` | - | แสดงค่า Configuration |
 | `symbols` | - | แสดง Symbols ยอดนิยม |
@@ -599,6 +600,6 @@ pip3 install --upgrade urllib3 certifi
 
 ---
 
-**เวอร์ชัน:** 1.5.1  
+**เวอร์ชัน:** 1.5.2  
 **อัปเดตล่าสุด:** 2026-08-30  
 **GitHub:** https://github.com/bbcnsshop/AI-Crypto-Trading-Monitor

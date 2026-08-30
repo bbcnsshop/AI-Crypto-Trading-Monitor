@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2026-08-30
+
+### ✨ Added
+
+#### 🆕 Monitor Mode ใหม่
+- **แสดงแค่สถานะ** - ไม่ต้องวิเคราะห์เต็มทุกรอบ
+- **เรียก AI เฉพาะเมื่อ Trigger** - ประหยัด API calls
+- Default interval: **5 นาที** (เปลี่ยนจาก 60 นาที)
+- แสดง: Price, RSI, MACD, ATR ในแต่ละรอบ
+- แสดง Trigger Status และ Cooldown Count
+
+**Options ใหม่:**
+```bash
+-i, --interval     # เช็คทุกกี่นาที (default: 5)
+-n, --max-runs     # จำนวนรอบสูงสุด
+--once             # debug - เช็คครั้งเดียวแล้วออก
+-m, --mode         # display mode เมื่อ trigger (default: compact)
+```
+
+**Output ตัวอย่าง (ไม่ trigger):**
+```
+  💰 Price: $78,276.00 (+0.12%)
+  📊 RSI: 55.4 (Neutral) | MACD: Bullish | ATR: 174.21
+  ⏸️ RSI อยู่ในโซนปกติ
+  AI Status: 🟢 พร้อม | ส่งไปแล้ว: 0 ครั้ง
+```
+
+**Output ตัวอย่าง (trigger):**
+```
+  💰 Price: $105.18 (-0.22%)
+  📊 RSI: 56.2 (Neutral) | MACD: Bullish | ATR: 0.47
+  🚨 TRIGGER! SMART_TRIGGER
+  เหตุผล: Near Key Level ($105, 0.37%)
+  🤖 กำลังเรียก AI...
+  [AI Analysis + Full Display]
+```
+
+---
+
 ## [1.5.1] - 2026-08-30
 
 ### 🐛 Fixed
@@ -177,6 +216,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Highlight |
 |---------|------|-----------|
+| **1.5.2** | 2026-08-30 | Monitor Mode (Trigger-Only AI) |
 | **1.5.1** | 2026-08-30 | Cross-Platform SSL Fix |
 | **1.5.0** | 2026-08-30 | CLI Interface (maincli.py) |
 | 1.4.2 | 2026-08-30 | Progress Bar + Backtest Panel |
