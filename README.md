@@ -39,34 +39,268 @@
 
 ## 🚀 วิธีติดตั้ง
 
-```bash
-# 1. Clone หรือ cd เข้าโฟลเดอร์
-cd /Users/Parinya/VSCode/BinanceMonitor
+### 📋 ความต้องการ
+- Python **3.9 ขึ้นไป** (แนะนำ 3.10+)
+- Git
+- Internet connection
 
-# 2. สร้าง Virtual Environment
+---
+
+## 🪟 ติดตั้งบน Windows
+
+### 1. ติดตั้ง Python
+
+**ดาวน์โหลดจากเว็บ (แนะนำ):**
+1. ไปที่ https://www.python.org/downloads/
+2. ดาวน์โหลด **Python 3.11** หรือใหม่กว่า
+3. รัน installer → **ติ๊ก ✅ Add Python to PATH** (สำคัญมาก!)
+4. กด **Install Now**
+
+**ตรวจสอบ:**
+```powershell
+python --version
+pip --version
+```
+
+**หรือใช้ winget (Windows 10+):**
+```powershell
+winget install Python.Python.3.11
+```
+
+### 2. ติดตั้ง Git
+```powershell
+winget install Git.Git
+```
+
+### 3. Clone และติดตั้ง
+```powershell
+# Clone โปรเจกต์
+git clone https://github.com/bbcnsshop/AI-Crypto-Trading-Monitor.git
+cd AI-Crypto-Trading-Monitor
+
+# สร้าง Virtual Environment
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+
+# ถ้า PowerShell block script รัน:
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
+# ติดตั้ง Dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# คัดลอก .env
+copy .env.example .env
+```
+
+### 4. แก้ปัญหา Python ไม่อยู่ใน PATH
+```powershell
+# ตั้ง PATH manually:
+[Environment]::SetEnvironmentVariable("Path", "$env:Path;C:\Python311;C:\Python311\Scripts", "User")
+
+# รีสตาร์ท PowerShell แล้วลองใหม่
+python --version
+```
+
+---
+
+## 🐧 ติดตั้งบน Linux
+
+### 🔵 Debian / Ubuntu (.deb)
+
+#### 1. ติดตั้ง Python
+```bash
+# Python มักติดตั้งมาแล้ว ตรวจสอบก่อน
+python3 --version
+
+# ถ้ายังไม่มี:
+sudo apt update
+sudo apt install -y python3 python3-pip python3-venv git
+
+# หรือใช้ deadsnakes PPA สำหรับ Python ใหม่กว่า:
+sudo apt install -y software-properties-common
+sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y python3.11 python3.11-venv python3.11-dev
+```
+
+#### 2. ติดตั้ง Dependencies ของระบบ (จำเป็นสำหรับ ccxt)
+```bash
+sudo apt install -y build-essential libssl-dev libffi-dev python3-dev
+```
+
+#### 3. Clone และติดตั้ง
+```bash
+git clone https://github.com/bbcnsshop/AI-Crypto-Trading-Monitor.git
+cd AI-Crypto-Trading-Monitor
+
+# สร้าง Virtual Environment
 python3 -m venv venv
 source venv/bin/activate
 
-# 3. ติดตั้ง Dependencies
-pip3 install -r requirements.txt
+# ติดตั้ง
+pip install --upgrade pip
+pip install -r requirements.txt
 
-# 4. คัดลอก .env.example เป็น .env
+# คัดลอก .env
 cp .env.example .env
-
-# 5. กรอก API Key ในไฟล์ .env (ดูวิธีด้านล่าง)
 ```
 
-### การขอ API Key
+---
 
-**OpenRouter API Key (จำเป็นสำหรับ AI วิเคราะห์):**
+### 🔴 Fedora / RHEL / CentOS (.rpm)
+
+#### 1. ติดตั้ง Python
+```bash
+# ตรวจสอบเวอร์ชัน
+python3 --version
+
+# Fedora (ใช้ dnf)
+sudo dnf install -y python3 python3-pip python3-devel git gcc
+
+# CentOS / RHEL 8+ (ใช้ dnf)
+sudo dnf install -y python3 python3-pip python3-devel git gcc openssl-devel libffi-devel
+
+# CentOS 7 / RHEL 7 (ใช้ yum - ต้อง enable EPEL)
+sudo yum install -y epel-release
+sudo yum install -y python3 python3-pip python3-devel git gcc openssl-devel libffi-devel
+```
+
+#### 2. Clone และติดตั้ง
+```bash
+git clone https://github.com/bbcnsshop/AI-Crypto-Trading-Monitor.git
+cd AI-Crypto-Trading-Monitor
+
+python3 -m venv venv
+source venv/bin/activate
+
+pip install --upgrade pip
+pip install -r requirements.txt
+
+cp .env.example .env
+```
+
+#### 3. ติดตั้ง SSL development headers
+```bash
+# ถ้าเจอ error "OpenSSL not found" ตอน install:
+sudo dnf install -y openssl-devel  # Fedora/RHEL
+sudo yum install -y openssl-devel  # CentOS
+```
+
+---
+
+### 🟢 Arch / Manjaro
+
+```bash
+sudo pacman -S python python-pip git base-devel openssl
+
+git clone https://github.com/bbcnsshop/AI-Crypto-Trading-Monitor.git
+cd AI-Crypto-Trading-Monitor
+
+python -m venv venv
+source venv/bin/activate
+
+pip install --upgrade pip
+pip install -r requirements.txt
+
+cp .env.example .env
+```
+
+---
+
+## 🍎 ติดตั้งบน macOS
+
+### 1. ติดตั้ง Homebrew (ถ้ายังไม่มี)
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# เพิ่ม PATH (Apple Silicon)
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# เพิ่ม PATH (Intel Mac)
+echo 'eval "$(/usr/local/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/usr/local/bin/brew shellenv)"
+```
+
+### 2. ติดตั้ง Python
+```bash
+# ตรวจสอบ Python ที่มีอยู่
+python3 --version
+
+# ติดตั้ง Python ใหม่ผ่าน Homebrew (แนะนำ)
+brew install python@3.11
+
+# ตรวจสอบ
+which python3
+python3 --version
+```
+
+### 3. Clone และติดตั้ง
+```bash
+git clone https://github.com/bbcnsshop/AI-Crypto-Trading-Monitor.git
+cd AI-Crypto-Trading-Monitor
+
+# สร้าง Virtual Environment
+python3 -m venv venv
+source venv/bin/activate
+
+# ติดตั้ง
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# คัดลอก .env
+cp .env.example .env
+```
+
+### 4. แก้ปัญหา SSL (ถ้าเจอ)
+```bash
+brew install openssl@3
+
+# เพิ่ม PATH
+echo 'export PATH="/opt/homebrew/opt/openssl@3/bin:$PATH"' >> ~/.zshrc
+echo 'export LDFLAGS="-L/opt/homebrew/opt/openssl@3/lib"' >> ~/.zshrc
+echo 'export CPPFLAGS="-I/opt/homebrew/opt/openssl@3/include"' >> ~/.zshrc
+
+source ~/.zshrc
+```
+
+---
+
+## 🔑 การขอ API Key
+
+### OpenRouter API Key (จำเป็นสำหรับ AI วิเคราะห์)
 1. ไปที่ https://openrouter.ai/
 2. สมัครสมาชิก + เติมเครดิต (เริ่มต้น $5)
 3. สร้าง API Key แล้วกรอกใน `.env`
 
-**Binance API Key (ไม่บังคับ - สำหรับเพิ่ม rate limit):**
+### Binance API Key (ไม่บังคับ - สำหรับเพิ่ม rate limit)
 1. ไปที่ https://www.binance.com/
 2. Settings > API Management
 3. สร้าง API Key (แนะนำ Read-Only)
+
+---
+
+## ✅ ตรวจสอบการติดตั้ง
+
+หลังติดตั้งเสร็จ ทดสอบว่าใช้งานได้:
+
+```bash
+# ตรวจสอบ Python version (ต้อง 3.9+)
+python3 --version
+
+# ตรวจสอบว่า venv active
+# Linux/macOS: ควรเห็น (venv) นำหน้า prompt
+# Windows: ควรเห็น (venv) นำหน้า PS
+
+# ทดสอบ import modules สำคัญ
+python3 -c "import ccxt, pandas, ta, rich, click, openai; print('✅ All modules installed!')"
+
+# รันโปรแกรม
+python3 maincli.py --help
+```
+
+ถ้าเห็น `✅ All modules installed!` แสดงว่าติดตั้งสำเร็จ! 🎉
 
 
 
