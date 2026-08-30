@@ -1,6 +1,11 @@
 """AI Crypto Trading Monitor - Main Entry Point"""
-import os, logging
+import os, logging, warnings
 from logging.handlers import RotatingFileHandler
+
+# Suppress SSL warnings (urllib3 + LibreSSL on macOS)
+warnings.filterwarnings('ignore', message='.*OpenSSL.*')
+logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+os.environ['PYTHONWARNINGS'] = 'ignore'
 from typing import Optional, Dict
 import ccxt, pandas as pd
 from rich.console import Console
