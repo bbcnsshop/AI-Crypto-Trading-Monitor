@@ -236,7 +236,11 @@ def monitor(symbol, timeframe, interval, mode, max_runs, once):
             data.symbol = symbol
             data.timeframe = timeframe
             data.latest_close = df['close'].iloc[-1]
-            data.price_change_pct = ((df['close'].iloc[-1] - df['close'].iloc[-2]) / df['close'].iloc[-2]) * 100
+            prev_close = df['close'].iloc[-2] if len(df) >= 2 else 0
+            if prev_close > 0:
+                data.price_change_pct = ((data.latest_close - prev_close) / prev_close) * 100
+            else:
+                data.price_change_pct = 0.0
 
             # คำนวณ indicators (ดึงค่า scalar จาก Series)
             indicators = calculate_indicators(df)
@@ -342,7 +346,11 @@ def backtest(symbol, timeframe, limit):
     # populate current price + indicators for display (use df from backtest, no extra fetch)
     if df is not None:
         data.latest_close = df['close'].iloc[-1]
-        data.price_change_pct = ((df['close'].iloc[-1] - df['close'].iloc[-2]) / df['close'].iloc[-2]) * 100
+        prev_close_bt = df['close'].iloc[-2] if len(df) >= 2 else 0
+        if prev_close_bt > 0:
+            data.price_change_pct = ((data.latest_close - prev_close_bt) / prev_close_bt) * 100
+        else:
+            data.price_change_pct = 0.0
         # populate indicators from backtest df (already has rsi, macd_hist, atr, ema20)
         def get_val(key):
             val = df[key].iloc[-1] if key in df else 0

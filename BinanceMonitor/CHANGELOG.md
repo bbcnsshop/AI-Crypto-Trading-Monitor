@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`maincli.py`** - เพิ่ม `macd_line`, `macd_signal`, `ema20` ในการคำนวณของ `run_quick_backtest`
 - **`ai_trigger.py`** - `check_smart_trigger()` Big Move: guard `prev_close > 0` ป้องกัน ZeroDivisionError ถ้า `prev_close = 0`
 - **`ai_client.py`** - `build_ai_context()`: guard `data.latest_close = None` ป้องกัน crash จาก format string (ใช้ `getattr(... ) or 0`)
+- **`maincli.py`** - `monitor` loop: guard `price_change_pct` ไม่หารด้วย 0 (กรณี df มี 1 candle หรือ prev_close=0)
 
 #### 🏗️ Bug Fixes (Code Review Round 1)
 - **`indicators.py`** - `find_swing_high_low()`: แก้ logic ให้ track highest/lowest value จริงๆ (ก่อนหน้า return index สุดท้ายที่ผ่านเงื่อนไข)
