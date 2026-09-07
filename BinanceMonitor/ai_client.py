@@ -116,7 +116,8 @@ def build_ai_context(data) -> str:
     ctx.append("=== MARKET DATA ===")
     ctx.append(f"Symbol: {data.symbol if hasattr(data, 'symbol') else 'BTC/USDT'}")
     ctx.append(f"Timeframe: {data.timeframe if hasattr(data, 'timeframe') else '1h'}")
-    ctx.append(f"Latest Price: {data.latest_close:.2f}")
+    close_price = getattr(data, 'latest_close', None) or 0
+    ctx.append(f"Latest Price: {close_price:.2f}")
     ctx.append("")
     
     if data.indicators:
