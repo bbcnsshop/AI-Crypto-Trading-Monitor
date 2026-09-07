@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2026-09-07
+
+### 🐛 Fixed
+
+#### 🏗️ Bug Fixes (Code Review Round 1)
+- **`indicators.py`** - `find_swing_high_low()`: แก้ logic ให้ track highest/lowest value จริงๆ (ก่อนหน้า return index สุดท้ายที่ผ่านเงื่อนไข)
+- **`indicators.py`** - `calculate_vpvr()`: แก้ Value Area double-count POC bin (start ด้วย `bin_volumes[poc_idx]` แทน `0`)
+- **`ai_trigger.py`** - `check_trigger()`: แก้ `ScheduleTracker` state persistence (สร้างใหม่ทุก call → ส่งเป็น param)
+- **`display.py`** - `_get_rsi_signal()`: แก้ threshold edge case (`>` `<` → `>=` `<=`)
+- **`display.py`** - `_display_compact()`: เพิ่ม Backtest Performance panel (ก่อนหน้าไม่แสดง)
+- **`candlestick_patterns.py`** - `_down()` / `_up()`: แก้ให้ดู 3 แท่งก่อนหน้าแทน 1 แท่ง (ลด false positive)
+- **`main.py`** - ลบ duplicate `except Exception` block (dead code)
+- **`main.py`** - เพิ่ม `symbol`/`timeframe` attributes ใน `TradingData` class
+- **`maincli.py`** - เพิ่ม `symbol`/`timeframe` defaults ใน `MarketData.__init__()`
+- **`maincli.py`** - `fetch_data()`: เพิ่ม retry mechanism (3 ครั้ง, delay 2 วินาที)
+- **`maincli.py`** - แก้ hardcoded `candles=100` → ใช้ `CANDLE_LIMIT`
+- **`maincli.py`** - แก้ `monitor` loop: เซ็ต `data.indicators` dict และ `data.patterns` dict ให้ `check_trigger` อ่านได้
+
+### ✅ Tested
+- ทุกไฟล์ `py_compile` ผ่าน
+- `maincli.py analyze` - BTC/USDT, ETH/USDT ✅
+- `maincli.py backtest` - ETH/USDT (15 trades) ✅
+- `maincli.py config-cmd` ✅
+- Smart Trigger RSI Oversold detection ✅
+- VPVR VAH/VAL ordering ✅
+- Fibonacci levels ✅
+
+---
+
 ## [1.5.2] - 2026-08-30
 
 ### ✨ Added
@@ -216,6 +245,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Highlight |
 |---------|------|-----------|
+| **1.5.3** | 2026-09-07 | Bug Fixes (Code Review Round 1) |
 | **1.5.2** | 2026-08-30 | Monitor Mode (Trigger-Only AI) |
 | **1.5.1** | 2026-08-30 | Cross-Platform SSL Fix |
 | **1.5.0** | 2026-08-30 | CLI Interface (maincli.py) |

@@ -2,7 +2,7 @@
 
 บอทสแกนกราฟคริปโต (BTC/USDT) ดึงข้อมูลจาก Binance คำนวณ Indicators (RSI, MACD, ATR, EMA), ตรวจจับ Candlestick Patterns (11 แบบ), Fibonacci และ VPVR แล้วส่งให้ AI วิเคราะห์จุดเข้า 3 ระดับ (3-Tier Entry) พร้อม TP/SL แสดงผลบน Terminal ด้วย Rich UI
 
-**เวอร์ชัน:** 1.5.2
+**เวอร์ชัน:** 1.5.3
 
 ---
 
@@ -600,6 +600,6 @@ pip3 install --upgrade urllib3 certifi
 
 ---
 
-**เวอร์ชัน:** 1.5.2  
-**อัปเดตล่าสุด:** 2026-08-30  
+**เวอร์ชัน:** 1.5.3  
+**อัปเดตล่าสุด:** 2026-09-07  
 **GitHub:** https://github.com/bbcnsshop/AI-Crypto-Trading-Monitor
