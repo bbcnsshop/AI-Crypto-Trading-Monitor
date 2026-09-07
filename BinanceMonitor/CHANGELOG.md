@@ -34,14 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`maincli.py`** - แก้ hardcoded `candles=100` → ใช้ `CANDLE_LIMIT`
 - **`maincli.py`** - แก้ `monitor` loop: เซ็ต `data.indicators` dict และ `data.patterns` dict ให้ `check_trigger` อ่านได้
 
-### ✅ Tested
-- ทุกไฟล์ `py_compile` ผ่าน
-- `maincli.py analyze` - BTC/USDT, ETH/USDT ✅
-- `maincli.py backtest` - ETH/USDT (15 trades) ✅
-- `maincli.py config-cmd` ✅
-- Smart Trigger RSI Oversold detection ✅
-- VPVR VAH/VAL ordering ✅
-- Fibonacci levels ✅
+### ✅ Tested (v1.5.3)
+- ทุกไฟล์ `py_compile` ผ่าน ✅
+- `maincli.py analyze` - BTC/USDT, ETH/USDT, SOL/USDT (standard/compact/verbose) ✅
+- `maincli.py backtest` - BTC/USDT, BNB/USDT, ETH/USDT (all timeframes) ✅
+- `maincli.py monitor --once` - compact mode ✅
+- `maincli.py config` ✅
+- `maincli.py symbols` ✅
+- `main.py` (entry point) ✅
+- Edge cases: 1 candle, prev_close=0, None indicators, empty df ✅
+- Git push to origin/main ✅
 
 ---
 
