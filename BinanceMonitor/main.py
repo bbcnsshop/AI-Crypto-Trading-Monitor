@@ -190,7 +190,10 @@ def run_analysis():
                 'atr': df['atr'].iloc[-1] if 'atr' in df else None,
                 'ema20': df['ema20'].iloc[-1] if 'ema20' in df else None,
             }
-            progress.update(main_task, advance=1, detail=f"RSI {data.indicators['rsi']:.0f}")
+            _rsi = data.indicators.get('rsi') or 0
+            if _rsi != _rsi:  # NaN guard
+                _rsi = 0
+            progress.update(main_task, advance=1, detail=f"RSI {_rsi:.0f}")
 
             data.patterns = detect_candlestick_patterns(df)
             bull = sum(1 for k, v in data.patterns.items() if v and 'bull' in k.lower())
@@ -202,13 +205,15 @@ def run_analysis():
             progress.update(main_task, advance=1, detail="Fib 61.8%")
 
             data.vpvr = calculate_vpvr(df, VPVR_BINS)
-            progress.update(main_task, advance=1, detail=f"POC ${data.vpvr.get('poc', 0):,.0f}")
+            _poc = data.vpvr.get('poc', 0) or 0
+            _poc_str = f"POC ${_poc:,.0f}" if _poc else "POC N/A"
+            progress.update(main_task, advance=1, detail=_poc_str)
 
             should_send, reason, trigger_type = check_trigger(data, df, _cooldown_tracker)
             if should_send:
                 data.ai_analysis = call_openrouter_ai(build_ai_context(data))
                 _cooldown_tracker.record_send()
-                progress.update(main_task, advance=1, detail=f"AI {trigger_type}")
+                progress.update(main_task, advance=1, detail=f"AI {trigger_type or 'OK'}")
             else:
                 data.ai_analysis = f"[AI Skipped: {reason}]"
                 progress.update(main_task, advance=1, detail="Skipped")
