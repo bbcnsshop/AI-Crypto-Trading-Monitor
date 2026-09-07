@@ -77,17 +77,21 @@ def fetch_data(symbol, timeframe, limit=100, max_retries=3, retry_delay=2):
 
 
 def run_quick_backtest(symbol, timeframe, candles=100):
+    """Returns (result_dict, df) tuple or ({}, None) on error"""
     from ta.momentum import RSIIndicator
-    from ta.trend import MACD
+    from ta.trend import MACD, EMAIndicator
     from ta.volatility import AverageTrueRange
     df = fetch_data(symbol, timeframe, candles)
     if df is None:
-        return {}
+        return {}, None
     try:
         df['rsi'] = RSIIndicator(close=df['close'], window=14).rsi()
         macd = MACD(close=df['close'])
         df['macd_hist'] = macd.macd_diff()
+        df['macd_line'] = macd.macd()
+        df['macd_signal'] = macd.macd_signal()
         df['atr'] = AverageTrueRange(high=df['high'], low=df['low'], close=df['close']).average_true_range()
+        df['ema20'] = EMAIndicator(close=df['close'], window=20, fillna=False).ema_indicator()
         signals = []
         for i in range(20, len(df) - 5):
             rsi = df['rsi'].iloc[i]
@@ -108,24 +112,25 @@ def run_quick_backtest(symbol, timeframe, candles=100):
             elif rsi > 60 and macd_h < 0:
                 signals.append({'type': 'SHORT', 'won': won})
         if not signals:
-            return {'winrate': 0, 'total_trades': 0, 'profit_factor': 0, 'total_pnl': 0,
-                    'period': f"{df['timestamp'].iloc[0].date()} -> {df['timestamp'].iloc[-1].date()}"}
+            return ({'winrate': 0, 'total_trades': 0, 'profit_factor': 0, 'total_pnl': 0,
+                    'period': f"{df['timestamp'].iloc[0].date()} -> {df['timestamp'].iloc[-1].date()}"}, df)
         total = len(signals)
         wins = sum(1 for s in signals if s['won'])
         longs = [s for s in signals if s['type'] == 'LONG']
         shorts = [s for s in signals if s['type'] == 'SHORT']
         wp = sum(2.0 for s in signals if s['won'])
         lp = sum(-1.0 for s in signals if not s['won'])
-        return {'winrate': (wins / total * 100), 'total_trades': total,
+        result = {'winrate': (wins / total * 100), 'total_trades': total,
                 'profit_factor': abs(wp / lp) if lp != 0 else 0,
                 'total_pnl': (wins * 2.0) - ((total - wins) * 1.0),
                 'avg_win': 2.0, 'avg_loss': -1.0,
                 'long_winrate': (sum(1 for s in longs if s['won']) / len(longs) * 100) if longs else 0,
                 'short_winrate': (sum(1 for s in shorts if s['won']) / len(shorts) * 100) if shorts else 0,
                 'period': f"{df['timestamp'].iloc[0].date()} -> {df['timestamp'].iloc[-1].date()}"}
+        return result, df
     except Exception as e:
         logging.error(f"Backtest error: {e}")
-        return {}
+        return {}, None
 
 
 def analyze_market(symbol, timeframe):
@@ -150,7 +155,8 @@ def analyze_market(symbol, timeframe):
         cooldown_tracker.record_send()
     else:
         data.ai_analysis = f"[AI Skipped: {reason}]"
-    data.backtest_result = run_quick_backtest(symbol, timeframe, CANDLE_LIMIT)
+    backtest_result, _ = run_quick_backtest(symbol, timeframe, CANDLE_LIMIT)
+    data.backtest_result = backtest_result
     return data
 
 
@@ -325,12 +331,30 @@ def backtest(symbol, timeframe, limit):
         f"[bold green]Quick Backtest[/bold green] | {symbol} {timeframe} | {limit} candles",
         border_style="green"
     ))
-    result = run_quick_backtest(symbol, timeframe, limit)
+    result, df = run_quick_backtest(symbol, timeframe, limit)
     if not result:
         console.print("[red]Backtest ล้มเหลว[/red]")
         return
     data = MarketData()
+    data.symbol = symbol
+    data.timeframe = timeframe
     data.backtest_result = result
+    # populate current price + indicators for display (use df from backtest, no extra fetch)
+    if df is not None:
+        data.latest_close = df['close'].iloc[-1]
+        data.price_change_pct = ((df['close'].iloc[-1] - df['close'].iloc[-2]) / df['close'].iloc[-2]) * 100
+        # populate indicators from backtest df (already has rsi, macd_hist, atr, ema20)
+        def get_val(key):
+            val = df[key].iloc[-1] if key in df else 0
+            return float(val) if val and val == val else 0.0  # handle nan
+        data.indicators = {
+            'rsi': get_val('rsi'),
+            'macd_line': get_val('macd_line') if 'macd_line' in df else 0.0,
+            'macd_signal': get_val('macd_signal') if 'macd_signal' in df else 0.0,
+            'macd_hist': get_val('macd_hist'),
+            'atr': get_val('atr'),
+            'ema20': get_val('ema20'),
+        }
     display_rich_ui(data, symbol, timeframe, 'standard')
 
 

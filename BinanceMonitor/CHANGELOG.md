@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🐛 Fixed
 
+#### 🏗️ Bug Fixes (Code Review Round 2)
+- **`maincli.py`** - `backtest` command แสดง Price = $0.00 (ไม่ populate data.latest_close/indicators) → fix ให้ใช้ df จาก run_quick_backtest
+- **`maincli.py`** - `run_quick_backtest` return tuple (result, df) แทน dict อย่างเดียว เพื่อหลีกเลี่ยง fetch ซ้ำ
+- **`maincli.py`** - เพิ่ม `macd_line`, `macd_signal`, `ema20` ในการคำนวณของ `run_quick_backtest`
+
 #### 🏗️ Bug Fixes (Code Review Round 1)
 - **`indicators.py`** - `find_swing_high_low()`: แก้ logic ให้ track highest/lowest value จริงๆ (ก่อนหน้า return index สุดท้ายที่ผ่านเงื่อนไข)
 - **`indicators.py`** - `calculate_vpvr()`: แก้ Value Area double-count POC bin (start ด้วย `bin_volumes[poc_idx]` แทน `0`)
@@ -245,7 +250,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Highlight |
 |---------|------|-----------|
-| **1.5.3** | 2026-09-07 | Bug Fixes (Code Review Round 1) |
+| **1.5.3** | 2026-09-07 | Bug Fixes (Code Review Round 1+2) |
 | **1.5.2** | 2026-08-30 | Monitor Mode (Trigger-Only AI) |
 | **1.5.1** | 2026-08-30 | Cross-Platform SSL Fix |
 | **1.5.0** | 2026-08-30 | CLI Interface (maincli.py) |
