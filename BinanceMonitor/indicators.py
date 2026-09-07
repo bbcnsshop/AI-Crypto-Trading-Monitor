@@ -25,19 +25,23 @@ def find_swing_high_low(df: pd.DataFrame, lookback: int = 5) -> Tuple[float, flo
     low = df['low'].values
     n = len(close)
     
-    # Find Swing High (highest point in lookback window)
+    # Find Swing High - track BOTH highest value AND its index
+    sh_value = high[lookback]
     sh_idx = lookback
     for i in range(lookback, n - lookback):
-        if high[i] >= max(high[i - lookback:i + lookback + 1]):
+        if high[i] >= max(high[i - lookback:i + lookback + 1]) and high[i] > sh_value:
+            sh_value = high[i]
             sh_idx = i
-    
-    # Find Swing Low (lowest point in lookback window)
+
+    # Find Swing Low - track BOTH lowest value AND its index
+    sl_value = low[lookback]
     sl_idx = lookback
     for i in range(lookback, n - lookback):
-        if low[i] <= min(low[i - lookback:i + lookback + 1]):
+        if low[i] <= min(low[i - lookback:i + lookback + 1]) and low[i] < sl_value:
+            sl_value = low[i]
             sl_idx = i
-    
-    return high[sh_idx], low[sl_idx], sh_idx, sl_idx
+
+    return sh_value, sl_value, sh_idx, sl_idx
 
 
 # ============================================================
@@ -139,28 +143,31 @@ def calculate_vpvr(df: pd.DataFrame, bins: int = 50) -> dict:
         poc_idx = np.argmax(bin_volumes)
         poc = (bin_edges[poc_idx] + bin_edges[poc_idx + 1]) / 2
         
-        # Value Area (70%)
+        # Value Area (70%) - expand outward from POC
         total_volume = bin_volumes.sum()
         target_volume = total_volume * 0.70
-        
-        cumsum = 0
+
+        # Start with POC volume so we don't double-count
+        cumsum = bin_volumes[poc_idx]
         vah_idx = poc_idx
         val_idx = poc_idx
-        
-        # Expand outward from POC
-        for i in range(bins):
-            # Expand up
-            if poc_idx + i < bins:
-                cumsum += bin_volumes[poc_idx + i]
-                if cumsum <= target_volume:
-                    vah_idx = poc_idx + i
-            
-            # Expand down
-            if poc_idx - i >= 0:
-                cumsum += bin_volumes[poc_idx - i]
-                if cumsum <= target_volume:
-                    val_idx = poc_idx - i
-        
+
+        # Expand outward from POC simultaneously (up + down)
+        for i in range(1, bins):
+            expanded = False
+            if vah_idx < bins - 1:
+                vah_idx += 1
+                cumsum += bin_volumes[vah_idx]
+                expanded = True
+            if val_idx > 0:
+                val_idx -= 1
+                cumsum += bin_volumes[val_idx]
+                expanded = True
+            if not expanded:
+                break
+            if cumsum >= target_volume:
+                break
+
         vah = (bin_edges[vah_idx] + bin_edges[vah_idx + 1]) / 2
         val = (bin_edges[val_idx] + bin_edges[val_idx + 1]) / 2
         

@@ -100,8 +100,8 @@ INDICATOR_DEFINITIONS = {
 
 def _get_rsi_signal(rsi: float) -> str:
     if rsi is None: return "N/A"
-    if rsi > 70: return "Overbought"
-    if rsi < 30: return "Oversold"
+    if rsi >= 70: return "Overbought"
+    if rsi <= 30: return "Oversold"
     return "Neutral"
 
 
@@ -295,6 +295,11 @@ def _display_compact(data, symbol: str, timeframe: str):
             title="[bold cyan]AI Analysis[/bold cyan]",
             border_style="green", padding=(1, 2)
         ))
+
+    # Backtest Performance (compact)
+    if hasattr(data, 'backtest_result') and data.backtest_result:
+        _display_backtest_summary(data.backtest_result)
+
     console.print(f"[dim]Updated: {datetime.now().strftime('%H:%M:%S')}[/dim]")
 
 

@@ -45,8 +45,9 @@ from display import display_rich_ui, display_config
 
 
 class MarketData:
-    def __init__(self):
-        self.symbol = self.timeframe = ""
+    def __init__(self, symbol: str = "BTC/USDT", timeframe: str = "1h"):
+        self.symbol = symbol
+        self.timeframe = timeframe
         self.latest_close = 0
         self.indicators = self.patterns = self.fibonacci = self.vpvr = {}
         self.ai_analysis = ""

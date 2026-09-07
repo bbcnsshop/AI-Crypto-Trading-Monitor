@@ -202,7 +202,7 @@ class ScheduleTracker:
 # ============================================================
 # Main Dispatcher (เลือกโหมดตาม AI_TRIGGER_MODE)
 # ============================================================
-def check_trigger(data, df, cooldown_tracker, manual_request=False) -> tuple:
+def check_trigger(data, df, cooldown_tracker, schedule_tracker=None, manual_request=False) -> tuple:
     """
     ตรวจสอบว่าควรส่ง AI หรือไม่ ตาม AI_TRIGGER_MODE
     Returns: (should_send, reason, trigger_type)
@@ -223,7 +223,8 @@ def check_trigger(data, df, cooldown_tracker, manual_request=False) -> tuple:
 
     # 3. Schedule Mode
     elif mode == "schedule":
-        schedule_tracker = ScheduleTracker()
+        if schedule_tracker is None:
+            schedule_tracker = ScheduleTracker()
         can, reason = schedule_tracker.can_send()
         if can:
             return True, f"Scheduled ({SCHEDULE_INTERVAL_MINUTES}min interval)", "SCHEDULE"

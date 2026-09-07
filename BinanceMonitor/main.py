@@ -138,6 +138,8 @@ class TradingData:
         self.patterns: Dict = {}
         self.ai_analysis: str = ""
         self.backtest_result: Optional[Dict] = None  # Quick backtest summary
+        self.symbol: str = SYMBOL   # Use config default
+        self.timeframe: str = TIMEFRAME  # Use config default
 
 def setup_logging():
     if not os.path.exists(LOG_DIR):
@@ -219,9 +221,6 @@ def run_analysis():
         console.print("")  # Newline after progress bar
         display_rich_ui_new(data, SYMBOL, TIMEFRAME, DISPLAY_MODE)
 
-    except Exception as e:
-        logging.error(f"Error: {e}")
-        console.print(f"[red]Error: {e}[/red]")
     except Exception as e:
         logging.error(f"Error: {e}")
         console.print(f"[red]Error: {e}[/red]")

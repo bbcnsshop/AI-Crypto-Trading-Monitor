@@ -23,16 +23,28 @@ def _geom(o, c, h, l):
     return {'body': b, 'range': r, 'uw': u, 'lw': lo, 'pos': (max(o, c) - l) / r}
 
 
-def _down(df):
-    if df is None or len(df) < 2:
+def _down(df, bars: int = 3):
+    """ตรวจสอบว่ามี downtrend ใน N แท่งล่าสุด (ปิดต่ำลงเรื่อยๆ)"""
+    if df is None or len(df) < bars:
         return True
-    return float(df['close'].iloc[-1]) < (float(df['open'].iloc[-2]) + float(df['close'].iloc[-2])) / 2
+    for i in range(2, min(bars + 1, len(df))):
+        prev_close = float(df['close'].iloc[-i])
+        prev_mid = (float(df['open'].iloc[-i]) + float(df['close'].iloc[-i])) / 2
+        if prev_close >= prev_mid:
+            return False
+    return True
 
 
-def _up(df):
-    if df is None or len(df) < 2:
+def _up(df, bars: int = 3):
+    """ตรวจสอบว่ามี uptrend ใน N แท่งล่าสุด (ปิดสูงขึ้นเรื่อยๆ)"""
+    if df is None or len(df) < bars:
         return False
-    return float(df['close'].iloc[-1]) > (float(df['open'].iloc[-2]) + float(df['close'].iloc[-2])) / 2
+    for i in range(2, min(bars + 1, len(df))):
+        prev_close = float(df['close'].iloc[-i])
+        prev_mid = (float(df['open'].iloc[-i]) + float(df['close'].iloc[-i])) / 2
+        if prev_close <= prev_mid:
+            return False
+    return True
 
 
 def detect_engulfing(df):
@@ -111,8 +123,8 @@ def detect_inverted_hammer(df):
 
 
 def detect_shooting_star(df):
-    """Shooting Star (upper wick ยาว, body อยู่ล่าง, หลังขาขึ้น)"""
-    if df is None or len(df) < 1:
+    """Shooting Star (หลังขาขึ้น)"""
+    if df is None or len(df) < 2:
         return False
     co, cc = float(df['open'].iloc[-1]), float(df['close'].iloc[-1])
     g = _geom(co, cc, float(df['high'].iloc[-1]), float(df['low'].iloc[-1]))
@@ -126,8 +138,8 @@ def detect_shooting_star(df):
 
 
 def detect_hanging_man(df):
-    """Hanging Man (lower wick ยาว, body อยู่บน, หลังขาขึ้น)"""
-    if df is None or len(df) < 1:
+    """Hanging Man (หลังขาขึ้น)"""
+    if df is None or len(df) < 2:
         return False
     co, cc = float(df['open'].iloc[-1]), float(df['close'].iloc[-1])
     g = _geom(co, cc, float(df['high'].iloc[-1]), float(df['low'].iloc[-1]))
