@@ -1,0 +1,214 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-09 12:00+0000\n"
+"PO-Revision-Date: 2026-02-09 12:00+0700\n"
+"Last-Translator: Parinya <parinya@example.com>\n"
+"Language-Team: Thai\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# Module: multichannel_ai
+msgid "Multi-Channel AI"
+msgstr "มัลติแชนแนล เอไอ"
+
+msgid "Dashboard"
+msgstr "แดชบอร์ด"
+
+msgid "Channels"
+msgstr "ช่องทาง"
+
+msgid "Channel Products"
+msgstr "สินค้าตามช่องทาง"
+
+msgid "Sync Manager"
+msgstr "จัดการซิงค์"
+
+msgid "Orders"
+msgstr "คำสั่งซื้อ"
+
+# Module: channel_config
+msgid "Channel"
+msgstr "ช่องทาง"
+
+msgid "Channels Configuration"
+msgstr "ตั้งค่าช่องทาง"
+
+msgid "Shopee"
+msgstr "ช้อปปี้"
+
+msgid "Lazada"
+msgstr "ลาซาด้า"
+
+msgid "TikTok Shop"
+msgstr "ติ๊กต็อก ช้อป"
+
+msgid "Active"
+msgstr "ใช้งาน"
+
+msgid "Inactive"
+msgstr "ไม่ใช้งาน"
+
+msgid "Name"
+msgstr "ชื่อ"
+
+msgid "Code"
+msgstr "รหัส"
+
+msgid "Platform Fee (%)"
+msgstr "ค่าธรรมเนียมแพลตฟอร์ม (%)"
+
+msgid "Payment Fee (%)"
+msgstr "ค่าธรรมเนียมการชำระเงิน (%)"
+
+msgid "Shipping Fee (%)"
+msgstr "ค่าจัดส่ง (%)"
+
+msgid "Total Products"
+msgstr "สินค้าทั้งหมด"
+
+msgid "Synced Products"
+msgstr "สินค้าที่ซิงค์แล้ว"
+
+msgid "Pending Products"
+msgstr "สินค้ารอซิงค์"
+
+msgid "Error Products"
+msgstr "สินค้าที่ซิงค์ผิดพลาด"
+
+# Module: channel_product
+msgid "Channel Product"
+msgstr "สินค้าตามช่องทาง"
+
+msgid "Channel Products"
+msgstr "สินค้าตามช่องทาง"
+
+msgid "Product"
+msgstr "สินค้า"
+
+msgid "Channel Price"
+msgstr "ราคาช่องทาง"
+
+msgid "Channel Qty"
+msgstr "จำนวนคงเหลือ"
+
+msgid "State"
+msgstr "สถานะ"
+
+msgid "Draft"
+msgstr "แบบร่าง"
+
+msgid "Sync Status"
+msgstr "สถานะซิงค์"
+
+msgid "Never"
+msgstr "ยังไม่เคย"
+
+msgid "Pending"
+msgstr "รอดำเนินการ"
+
+msgid "Synced"
+msgstr "ซิงค์แล้ว"
+
+msgid "Error"
+msgstr "ผิดพลาด"
+
+msgid "AI Recommended Price"
+msgstr "ราคาที่ AI แนะนำ"
+
+msgid "AI Confidence"
+msgstr "ความเชื่อมั่น AI"
+
+msgid "Completeness (%)"
+msgstr "ความสมบูรณ์ (%)"
+
+msgid "Sync to Channel"
+msgstr "ซิงค์ไปยังช่องทาง"
+
+msgid "Fetch from Channel"
+msgstr "ดึงข้อมูลจากช่องทาง"
+
+msgid "Last Sync Date"
+msgstr "วันที่ซิงค์ล่าสุด"
+
+# Module: product_template
+msgid "Is on Shopee"
+msgstr "อยู่บนช้อปปี้"
+
+msgid "Is on Lazada"
+msgstr "อยู่บนลาซาด้า"
+
+msgid "Is on TikTok"
+msgstr "อยู่บนติ๊กต็อก"
+
+msgid "Sold Online"
+msgstr "ขายออนไลน์"
+
+msgid "Channel Product Count"
+msgstr "จำนวนสินค้าตามช่องทาง"
+
+msgid "Total Online Stock"
+msgstr "สต็อกออนไลน์รวม"
+
+msgid "Online Revenue Potential"
+msgstr "รายได้ที่คาดว่าจะได้"
+
+msgid "Quick Publish to Channels"
+msgstr "เผยแพร่ด่วนไปยังช่องทาง"
+
+msgid "Open Multi-Channel Manager"
+msgstr "เปิดตัวจัดการมัลติแชนแนล"
+
+# Errors
+msgid "Error: %s"
+msgstr "ข้อผิดพลาด: %s"
+
+msgid "Channel is not active"
+msgstr "ช่องทางไม่ได้เปิดใช้งาน"
+
+msgid "Product must be set"
+msgstr "ต้องระบุสินค้า"
+
+msgid "Price must be positive"
+msgstr "ราคาต้องเป็นค่าบวก"
+
+# Frontend
+msgid "Welcome to Multi-Channel"
+msgstr "ยินดีต้อนรับสู่ มัลติแชนแนล"
+
+msgid "Manage your products across Shopee, Lazada, and TikTok Shop"
+msgstr "จัดการสินค้าของคุณข้ามช้อปปี้ ลาซาด้า และติ๊กต็อก ช้อป"
+
+msgid "Total Channels"
+msgstr "ช่องทางทั้งหมด"
+
+msgid "Active Products"
+msgstr "สินค้าที่ใช้งาน"
+
+msgid "Recent Syncs"
+msgstr "การซิงค์ล่าสุด"
+
+msgid "Sync Now"
+msgstr "ซิงค์ตอนนี้"
+
+msgid "Search"
+msgstr "ค้นหา"
+
+msgid "Filter"
+msgstr "ตัวกรอง"
+
+msgid "All"
+msgstr "ทั้งหมด"
+
+msgid "Page"
+msgstr "หน้า"
+
+msgid "Previous"
+msgstr "ก่อนหน้า"
+
+msgid "Next"
+msgstr "ถัดไป"

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_channel_product_field_mapping_tree" model="ir.ui.view">
+        <field name="name">channel.product.field.mapping.tree</field>
+        <field name="model">channel.product.field.mapping</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="channel_id"/>
+                <field name="odoo_model"/>
+                <field name="odoo_field"/>
+                <field name="platform_field"/>
+                <field name="sequence"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_channel_product_field_mapping_form" model="ir.ui.view">
+        <field name="name">channel.product.field.mapping.form</field>
+        <field name="model">channel.product.field.mapping</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="channel_id"/>
+                        <field name="odoo_model"/>
+                        <field name="odoo_field"/>
+                        <field name="platform_field"/>
+                        <field name="sequence"/>
+                        <field name="active"/>
+                        <field name="is_required"/>
+                    </group>
+                    <group>
+                        <field name="transform_type"/>
+                        <field name="transform_value"/>
+                        <field name="default_value"/>
+                        <field name="validation_rule"/>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_channel_field_mapping" model="ir.actions.act_window">
+        <field name="name">Field Mappings</field>
+        <field name="res_model">channel.product.field.mapping</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

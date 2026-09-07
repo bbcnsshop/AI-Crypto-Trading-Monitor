@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="group_multichannel_user" model="res.groups">
+            <field name="name">Multi-Channel E-Commerce User</field>
+            <field name="category_id" ref="base.module_category_sales"/>
+        </record>
+        <record id="group_multichannel_manager" model="res.groups">
+            <field name="name">Multi-Channel E-Commerce Manager</field>
+            <field name="category_id" ref="base.module_category_sales"/>
+            <field name="implied_ids" eval="[(4, ref('group_multichannel_user'))]"/>
+        </record>
+    </data>
+</odoo>

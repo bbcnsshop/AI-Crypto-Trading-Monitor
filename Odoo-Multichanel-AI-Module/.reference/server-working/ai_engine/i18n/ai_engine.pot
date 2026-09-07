@@ -1,0 +1,174 @@
+# Translation file for ai_engine module
+# Copyright (C) 2024 BBCNS Shop
+# This file is distributed under the same license as the ai_engine package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-06 10:00+0700\n"
+"PO-Revision-Date: 2026-09-06 10:00+0700\n"
+"Last-Translator: Parinya <parinya@bbcns.shop>\n"
+"Language-Team: Thai\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# Module: ai_engine
+msgid "AI Engine"
+msgstr "เอไนจิน เอไอ"
+
+msgid "AI Engine for Product Classification and Pricing"
+msgstr "เอไนจิน เอไอ สำหรับจำแนกประเภทสินค้าและกำหนดราคา"
+
+msgid "AI Engine Configuration"
+msgstr "ตั้งค่าเอไนจิน เอไอ"
+
+msgid "Engine Name"
+msgstr "ชื่อเอไนจิน"
+
+msgid "Default AI Engine"
+msgstr "เอไนจิน เอไอ ตั้งต้น"
+
+msgid "AI Provider"
+msgstr "ผู้ให้บริการ เอไอ"
+
+msgid "OpenRouter (Multiple Models)"
+msgstr "โอเพนราวเตอร์ (หลายโมเดล)"
+
+msgid "Local LLM (Ollama)"
+msgstr "แลลแอลเอ็ม ในเครื่อง (ออลลาม่า)"
+
+msgid "OpenRouter API Key"
+msgstr "คีย์ เอพีไอ โอเพนราวเตอร์"
+
+msgid "Base URL"
+msgstr "เบส ยูอาร์แอล"
+
+msgid "Model"
+msgstr "โมเดล"
+
+msgid "Local Endpoint"
+msgstr "เอนด์พอยต์ในเครื่อง"
+
+msgid "Local Model"
+msgstr "โมเดลในเครื่อง"
+
+msgid "Platform Fee (%)"
+msgstr "ค่าธรรมเนียมแพลตฟอร์ม (%)"
+
+msgid "Payment Fee (%)"
+msgstr "ค่าธรรมเนียมชำระเงิน (%)"
+
+msgid "Shipping Subsidy (%)"
+msgstr "ค่าช่วยเหลือค่าจัดส่ง (%)"
+
+msgid "VAT Rate (%)"
+msgstr "อัตราภาษีมูลค่าเพิ่ม (%)"
+
+msgid "Category Mappings"
+msgstr "การแมปประเภทสินค้า"
+
+msgid "Category Mapping"
+msgstr "การแมปประเภทสินค้า"
+
+msgid "AI Category Mapping"
+msgstr "การแมปประเภทสินค้า เอไอ"
+
+msgid "Engine"
+msgstr "เอไนจิน"
+
+msgid "Category"
+msgstr "ประเภทสินค้า"
+
+msgid "Product Name"
+msgstr "ชื่อสินค้า"
+
+msgid "Channel"
+msgstr "ช่องทาง"
+
+msgid "Channel Code"
+msgstr "รหัสช่องทาง"
+
+msgid "Confidence"
+msgstr "ความมั่นใจ"
+
+msgid "Price Recommendation"
+msgstr "คำแนะนำราคา"
+
+msgid "Price"
+msgstr "ราคา"
+
+msgid "Cost Price"
+msgstr "ราคาต้นทุน"
+
+msgid "Selling Price"
+msgstr "ราคาขาย"
+
+msgid "Gross Profit"
+msgstr "กำไรขั้นต้น"
+
+msgid "Net Profit"
+msgstr "กำไรสุทธิ"
+
+msgid "Net Margin"
+msgstr "อัตรากำไรสุทธิ"
+
+msgid "AI Recommended Price"
+msgstr "ราคาแนะนำจากเอไอ"
+
+msgid "Recommendation"
+msgstr "คำแนะนำ"
+
+msgid "Apply"
+msgstr "นำไปใช้"
+
+msgid "Apply Recommended Price"
+msgstr "นำราคาแนะนำไปใช้"
+
+msgid "AI Pricing"
+msgstr "การกำหนดราคา เอไอ"
+
+msgid "AI Classification"
+msgstr "การจำแนกประเภท เอไอ"
+
+msgid "Price Calculation"
+msgstr "การคำนวณราคา"
+
+msgid "Profit Calculation"
+msgstr "การคำนวณกำไร"
+
+msgid "Shopee"
+msgstr "ช้อปปี้"
+
+msgid "Lazada"
+msgstr "ลาซาด้า"
+
+msgid "TikTok Shop"
+msgstr "ติ๊กต็อก ช้อป"
+
+msgid "Active"
+msgstr "เปิดใช้งาน"
+
+msgid "Inactive"
+msgstr "ปิดใช้งาน"
+
+msgid "Error"
+msgstr "ข้อผิดพลาด"
+
+msgid "Warning"
+msgstr "คำเตือน"
+
+msgid "Success"
+msgstr "สำเร็จ"
+
+msgid "Failed"
+msgstr "ล้มเหลว"
+
+msgid "OpenRouter API Key not configured"
+msgstr "ยังไม่ได้ตั้งค่าคีย์ เอพีไอ โอเพนราวเตอร์"
+
+msgid "Get from https://openrouter.ai/keys"
+msgstr "รับได้จาก https://openrouter.ai/keys"

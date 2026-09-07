@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Demo Channel List Module -->
+        <record id="demo_channel_list_shopee" model="channel.list.module">
+            <field name="name">Shopee</field>
+            <field name="code">shopee</field>
+            <field name="icon">🛒</field>
+            <field name="active" eval="True"/>
+            <field name="is_installed" eval="True"/>
+            <field name="country_code">TH</field>
+            <field name="currency_code">THB</field>
+            <field name="platform_url">https://shopee.co.th</field>
+            <field name="developer_url">https://openplatform.shopee.com</field>
+            <field name="api_class">shopee.api.connector</field>
+            <field name="webhook_url">/multichannel/shopee/webhook</field>
+            <field name="sync_method">_sync_shopee</field>
+            <field name="default_commission_rate">5.0</field>
+            <field name="default_payment_fee_rate">2.0</field>
+            <field name="default_shipping_fee_rate">2.5</field>
+        </record>
+
+        <record id="demo_channel_list_lazada" model="channel.list.module">
+            <field name="name">Lazada</field>
+            <field name="code">lazada</field>
+            <field name="icon">🏪</field>
+            <field name="active" eval="True"/>
+            <field name="is_installed" eval="True"/>
+            <field name="country_code">TH</field>
+            <field name="currency_code">THB</field>
+            <field name="platform_url">https://lazada.co.th</field>
+            <field name="developer_url">https://open.lazada.com</field>
+            <field name="api_class">lazada.api.connector</field>
+            <field name="webhook_url">/multichannel/lazada/webhook</field>
+            <field name="sync_method">_sync_lazada</field>
+            <field name="default_commission_rate">4.0</field>
+            <field name="default_payment_fee_rate">2.0</field>
+            <field name="default_shipping_fee_rate">3.0</field>
+        </record>
+
+        <record id="demo_channel_list_tiktok" model="channel.list.module">
+            <field name="name">TikTok Shop</field>
+            <field name="code">tiktok</field>
+            <field name="icon">📱</field>
+            <field name="active" eval="True"/>
+            <field name="is_installed" eval="True"/>
+            <field name="country_code">TH</field>
+            <field name="currency_code">THB</field>
+            <field name="platform_url">https://shop.tiktok.com</field>
+            <field name="developer_url">https://partner.tiktokshop.com</field>
+            <field name="api_class">tiktok.api.connector</field>
+            <field name="webhook_url">/multichannel/tiktok/webhook</field>
+            <field name="sync_method">_sync_tiktok</field>
+            <field name="default_commission_rate">6.0</field>
+            <field name="default_payment_fee_rate">2.5</field>
+            <field name="default_shipping_fee_rate">2.0</field>
+        </record>
+
+        <!-- Demo Channel Configs -->
+        <record id="demo_channel_shopee" model="channel.config">
+            <field name="name">Shopee Thailand</field>
+            <field name="code">shopee</field>
+            <field name="active" eval="True"/>
+            <field name="platform_fee">5.0</field>
+            <field name="payment_fee">2.0</field>
+            <field name="shipping_fee">2.5</field>
+        </record>
+        <!-- Demo Channel Configs -->
+        <record id="demo_channel_shopee" model="channel.config">
+            <field name="name">Shopee Thailand</field>
+            <field name="code">shopee</field>
+            <field name="active" eval="True"/>
+            <field name="platform_fee">5.0</field>
+            <field name="payment_fee">2.0</field>
+            <field name="shipping_fee">2.5</field>
+        </record>
+
+        <record id="demo_channel_lazada" model="channel.config">
+            <field name="name">Lazada Thailand</field>
+            <field name="code">lazada</field>
+            <field name="active" eval="True"/>
+            <field name="platform_fee">5.0</field>
+            <field name="payment_fee">2.0</field>
+            <field name="shipping_fee">3.0</field>
+        </record>
+
+        <record id="demo_channel_tiktok" model="channel.config">
+            <field name="name">TikTok Shop Thailand</field>
+            <field name="code">tiktok</field>
+            <field name="active" eval="True"/>
+            <field name="platform_fee">3.5</field>
+            <field name="payment_fee">1.5</field>
+            <field name="shipping_fee">2.0</field>
+        </record>
+
+        <!-- Demo Product Category -->
+        <record id="demo_category_electronics" model="product.category">
+            <field name="name">Electronics</field>
+        </record>
+
+        <record id="demo_category_laptops" model="product.category">
+            <field name="name">Laptops</field>
+            <field name="parent_id" ref="demo_category_electronics"/>
+        </record>
+
+        <record id="demo_category_mobiles" model="product.category">
+            <field name="name">Mobile Phones</field>
+            <field name="parent_id" ref="demo_category_electronics"/>
+        </record>
+
+        <!-- Demo Products -->
+        <record id="demo_product_macbook" model="product.template">
+            <field name="name">MacBook Pro 14" M3 Pro 18GB/512GB</field>
+            <field name="categ_id" ref="demo_category_laptops"/>
+            <field name="list_price">89900.00</field>
+            <field name="standard_price">65000.00</field>
+            <field name="default_code">MBP-M3PRO-14</field>
+            <field name="type">product</field>
+        </record>
+
+        <record id="demo_product_iphone" model="product.template">
+            <field name="name">iPhone 15 Pro Max 256GB</field>
+            <field name="categ_id" ref="demo_category_mobiles"/>
+            <field name="list_price">49900.00</field>
+            <field name="standard_price">38000.00</field>
+            <field name="default_code">IPH-15PM-256</field>
+            <field name="type">product</field>
+        </record>
+
+        <record id="demo_product_airpods" model="product.template">
+            <field name="name">AirPods Pro 2nd Gen USB-C</field>
+            <field name="categ_id" ref="demo_category_electronics"/>
+            <field name="list_price">7990.00</field>
+            <field name="standard_price">5500.00</field>
+            <field name="default_code">APP-APP2-USBC</field>
+            <field name="type">product</field>
+        </record>
+
+        <!-- Demo Channel Products -->
+        <record id="demo_channel_product_macbook_shopee" model="channel.product">
+            <field name="name">MacBook Pro 14" M3 Pro (Shopee)</field>
+            <field name="product_tmpl_id" ref="demo_product_macbook"/>
+            <field name="channel_id" ref="demo_channel_shopee"/>
+            <field name="channel_price">89500.00</field>
+            <field name="channel_qty">25</field>
+            <field name="state">active</field>
+            <field name="sync_status">synced</field>
+            <field name="ai_recommended_price">89500.00</field>
+            <field name="ai_confidence">0.85</field>
+        </record>
+
+        <record id="demo_channel_product_macbook_lazada" model="channel.product">
+            <field name="name">MacBook Pro 14" M3 Pro (Lazada)</field>
+            <field name="product_tmpl_id" ref="demo_product_macbook"/>
+            <field name="channel_id" ref="demo_channel_lazada"/>
+            <field name="channel_price">90500.00</field>
+            <field name="channel_qty">20</field>
+            <field name="state">active</field>
+            <field name="sync_status">synced</field>
+            <field name="ai_recommended_price">89500.00</field>
+        </record>
+
+        <record id="demo_channel_product_iphone_shopee" model="channel.product">
+            <field name="name">iPhone 15 Pro Max (Shopee)</field>
+            <field name="product_tmpl_id" ref="demo_product_iphone"/>
+            <field name="channel_id" ref="demo_channel_shopee"/>
+            <field name="channel_price">49500.00</field>
+            <field name="channel_qty">50</field>
+            <field name="state">active</field>
+            <field name="sync_status">synced</field>
+        </record>
+
+        <record id="demo_channel_product_airpods_tiktok" model="channel.product">
+            <field name="name">AirPods Pro 2 (TikTok)</field>
+            <field name="product_tmpl_id" ref="demo_product_airpods"/>
+            <field name="channel_id" ref="demo_channel_tiktok"/>
+            <field name="channel_price">7900.00</field>
+            <field name="channel_qty">100</field>
+            <field name="state">draft</field>
+            <field name="sync_status">pending</field>
+        </record>
+
+        <!-- Demo Field Mappings -->
+        <record id="demo_field_mapping_1" model="channel.product.field.mapping">
+            <field name="name">Product Name</field>
+            <field name="channel_id" ref="demo_channel_shopee"/>
+            <field name="odoo_field">name</field>
+            <field name="platform_field">product_name</field>
+            <field name="is_required" eval="True"/>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="demo_field_mapping_2" model="channel.product.field.mapping">
+            <field name="name">Price</field>
+            <field name="channel_id" ref="demo_channel_shopee"/>
+            <field name="odoo_field">list_price</field>
+            <field name="platform_field">price</field>
+            <field name="is_required" eval="True"/>
+            <field name="sequence">20</field>
+        </record>
+
+        <!-- Demo Category Mappings -->
+        <record id="demo_category_mapping_1" model="product.category.mapping">
+            <field name="channel_id" ref="demo_channel_shopee"/>
+            <field name="channel_category_id">100001</field>
+            <field name="channel_category_name">Laptops &amp; Notebooks</field>
+            <field name="odoo_category_id" ref="demo_category_laptops"/>
+            <field name="auto_map" eval="True"/>
+        </record>
+
+        <record id="demo_category_mapping_2" model="product.category.mapping">
+            <field name="channel_id" ref="demo_channel_lazada"/>
+            <field name="channel_category_id">200001</field>
+            <field name="channel_category_name">Mobile Phones</field>
+            <field name="odoo_category_id" ref="demo_category_mobiles"/>
+            <field name="auto_map" eval="True"/>
+        </record>
+    </data>
+</odoo>

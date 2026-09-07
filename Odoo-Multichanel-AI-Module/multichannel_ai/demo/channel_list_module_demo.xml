@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+<!-- Channel List Module - Demo Data -->
+<record id="channel_list_shopee" model="channel.list.module">
+    <field name="name">Shopee</field>
+    <field name="code">shopee</field>
+    <field name="icon">🛒</field>
+    <field name="sequence">10</field>
+    <field name="active">True</field>
+    <field name="is_installed">True</field>
+    <field name="country_code">TH</field>
+    <field name="currency_code">THB</field>
+    <field name="platform_url">https://shopee.co.th</field>
+    <field name="developer_url">https://openplatform.shopee.com</field>
+    <field name="api_class">shopee.api.connector</field>
+    <field name="webhook_url">/multichannel/shopee/webhook</field>
+    <field name="sync_method">_sync_shopee</field>
+    <field name="config_model">channel.config</field>
+    <field name="default_commission_rate">5.0</field>
+    <field name="default_payment_fee_rate">2.0</field>
+    <field name="default_shipping_fee_rate">2.5</field>
+    <field name="description">Shopee is a leading e-commerce platform in Southeast Asia and Taiwan.</field>
+</record>
+
+<record id="channel_list_lazada" model="channel.list.module">
+    <field name="name">Lazada</field>
+    <field name="code">lazada</field>
+    <field name="icon">🏪</field>
+    <field name="sequence">20</field>
+    <field name="active">True</field>
+    <field name="is_installed">True</field>
+    <field name="country_code">TH</field>
+    <field name="currency_code">THB</field>
+    <field name="platform_url">https://lazada.co.th</field>
+    <field name="developer_url">https://open.lazada.com</field>
+    <field name="api_class">lazada.api.connector</field>
+    <field name="webhook_url">/multichannel/lazada/webhook</field>
+    <field name="sync_method">_sync_lazada</field>
+    <field name="config_model">channel.config</field>
+    <field name="default_commission_rate">4.0</field>
+    <field name="default_payment_fee_rate">2.0</field>
+    <field name="default_shipping_fee_rate">3.0</field>
+    <field name="description">Lazada is a leading e-commerce platform in Southeast Asia.</field>
+</record>
+
+<record id="channel_list_tiktok" model="channel.list.module">
+    <field name="name">TikTok Shop</field>
+    <field name="code">tiktok</field>
+    <field name="icon">📱</field>
+    <field name="sequence">30</field>
+    <field name="active">True</field>
+    <field name="is_installed">True</field>
+    <field name="country_code">TH</field>
+    <field name="currency_code">THB</field>
+    <field name="platform_url">https://shop.tiktok.com</field>
+    <field name="developer_url">https://partner.tiktokshop.com</field>
+    <field name="api_class">tiktok.api.connector</field>
+    <field name="webhook_url">/multichannel/tiktok/webhook</field>
+    <field name="sync_method">_sync_tiktok</field>
+    <field name="config_model">channel.config</field>
+    <field name="default_commission_rate">6.0</field>
+    <field name="default_payment_fee_rate">2.5</field>
+    <field name="default_shipping_fee_rate">2.0</field>
+    <field name="description">TikTok Shop is a social commerce platform on TikTok.</field>
+</record>
+</data>
+</odoo>

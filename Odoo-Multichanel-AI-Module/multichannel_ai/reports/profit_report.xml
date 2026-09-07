@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Profit Report Action -->
+        <record id="action_profit_report" model="ir.actions.act_window">
+            <field name="name">Profit Report</field>
+            <field name="res_model">channel.product</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+    </data>
+</odoo>

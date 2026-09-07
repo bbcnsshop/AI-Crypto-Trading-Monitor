@@ -1,0 +1,52 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Python files
+*.py text diff=python
+
+# XML files
+*.xml text diff=xml
+
+# YAML files
+*.yml text diff=yaml
+*.yaml text diff=yaml
+
+# Markdown files
+*.md text diff=markdown
+
+# JSON files
+*.json text
+
+# Shell scripts
+*.sh text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+
+# Odoo specific
+*.csv text
+*.po text
+*.pot text
+
+# Normalize line endings for all text files
+*.py text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+
+# Force Unix line endings for shell scripts
+*.sh text eol=lf
+
+# Diff settings
+*.py diff=python
+*.xml diff=xml
+*.yml diff=yaml
+*.yaml diff=yaml

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_add_to_channel_bulk_wizard_form" model="ir.ui.view">
+        <field name="name">add.to.channel.bulk.wizard.form</field>
+        <field name="model">add.to.channel.bulk.wizard</field>
+        <field name="arch" type="xml">
+            <form><sheet><group>
+                <field name="channel_id"/>
+                <field name="selection_type"/>
+                <field name="category_id"/>
+                <field name="use_ai_price"/>
+                <field name="target_margin"/>
+            </group></sheet></form>
+        </field>
+    </record>
+    <record id="action_add_to_channel_bulk_wizard" model="ir.actions.act_window">
+        <field name="name">Add Products to Channel</field>
+        <field name="res_model">add.to.channel.bulk.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_channel_order_tree" model="ir.ui.view">
+        <field name="name">channel.order.tree</field>
+        <field name="model">channel.order</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="channel_id"/>
+                <field name="channel_order_id"/>
+                <field name="channel_state"/>
+                <field name="order_date"/>
+                <field name="total_amount"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_channel_order_form" model="ir.ui.view">
+        <field name="name">channel.order.form</field>
+        <field name="model">channel.order</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,confirmed,processing,shipped,delivered"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="channel_id"/>
+                        <field name="channel_order_id"/>
+                        <field name="channel_state"/>
+                        <field name="partner_id"/>
+                        <field name="customer_name"/>
+                        <field name="customer_email"/>
+                        <field name="customer_phone"/>
+                    </group>
+                    <group>
+                        <field name="order_date"/>
+                        <field name="subtotal"/>
+                        <field name="shipping_cost"/>
+                        <field name="platform_fee"/>
+                        <field name="payment_fee"/>
+                        <field name="tax_amount"/>
+                        <field name="total_amount"/>
+                    </group>
+                    <notebook>
+                        <page string="Order Lines">
+                            <field name="line_ids"/>
+                        </page>
+                        <page string="Shipping">
+                            <field name="shipping_address"/>
+                            <field name="billing_address"/>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                        <page string="Related">
+                            <field name="sale_order_id"/>
+                            <field name="delivery_count"/>
+                            <field name="invoice_count"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_channel_order" model="ir.actions.act_window">
+        <field name="name">Channel Orders</field>
+        <field name="res_model">channel.order</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

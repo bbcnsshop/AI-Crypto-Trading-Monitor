@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Sync Wizard View -->
+    <record id="view_sync_wizard_form" model="ir.ui.view">
+        <field name="name">channel.sync.wizard.form</field>
+        <field name="model">channel.sync.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group string="Select Channels">
+                        <field name="channel_ids" widget="many2many_tags"/>
+                    </group>
+                    <group string="Sync Options">
+                        <field name="sync_products"/>
+                        <field name="sync_orders"/>
+                        <field name="update_existing"/>
+                    </group>
+                </group>
+                <group string="Date Range (for Orders)" attrs="{'invisible': [('sync_orders', '=', False)]}">
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_sync" type="object" string="Sync Now" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

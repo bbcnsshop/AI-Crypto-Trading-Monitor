@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="multichannel_field_mappings" name="Field Mappings">
+        <t t-call="multichannel_ai.multichannel_layout">
+            <div class="o_portal_content">
+                <h1>Field Mappings</h1>
+            </div>
+        </t>
+    </template>
+</odoo>

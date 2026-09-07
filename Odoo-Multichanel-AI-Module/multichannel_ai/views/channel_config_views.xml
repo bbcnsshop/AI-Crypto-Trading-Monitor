@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_channel_config_tree" model="ir.ui.view">
+        <field name="name">channel.config.tree</field>
+        <field name="model">channel.config</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="platform"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_channel_config_form" model="ir.ui.view">
+        <field name="name">channel.config.form</field>
+        <field name="model">channel.config</field>
+        <field name="arch" type="xml">
+            <form>
+                <!-- AI Status Banner -->
+                <div class="alert alert-info" role="alert" invisible="ai_available">
+                    <p>
+                        <strong>AI Features Status:</strong>
+                        AI-powered pricing requires the <em>AI Engine</em> module.
+                        Pricing will use formula-based calculations until AI Engine is installed.
+                    </p>
+                    <p>
+                        <a href="/apps" class="btn btn-sm btn-primary">Install AI Engine</a>
+                    </p>
+                </div>
+                <div class="alert alert-success" role="alert" invisible="not ai_available">
+                    <p>
+                        <strong>AI Features:</strong>
+                        AI Engine is installed and ready for AI-powered pricing recommendations.
+                    </p>
+                </div>
+                <sheet>
+                    <group>
+                        <group string="Settings">
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="platform"/>
+                            <field name="active"/>
+                            <field name="sequence"/>
+                            <field name="company_id"/>
+                        </group>
+                        <group string="API Credentials">
+                            <field name="api_url"/>
+                            <field name="base_url"/>
+                            <field name="partner_id"/>
+                            <field name="partner_key" password="True"/>
+                            <field name="shop_id"/>
+                            <field name="access_token" password="True"/>
+                            <field name="refresh_token" password="True"/>
+                            <field name="token_expire_date"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_channel_config_search" model="ir.ui.view">
+        <field name="name">channel.config.search</field>
+        <field name="model">channel.config</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <filter name="active" string="Active" domain="[('active','=',True)]"/>
+                <filter name="inactive" string="Inactive" domain="[('active','=',False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_channel_config" model="ir.actions.act_window">
+        <field name="name">Channel Configs</field>
+        <field name="res_model">channel.config</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

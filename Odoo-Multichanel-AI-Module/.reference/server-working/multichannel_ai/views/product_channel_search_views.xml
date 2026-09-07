@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_product_search_channel" model="ir.ui.view">
+        <field name="name">product.product.search.channel</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_search_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="is_sold_online"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

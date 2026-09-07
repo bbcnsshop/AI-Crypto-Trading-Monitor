@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_channel_product_ai_fill_wizard_form" model="ir.ui.view">
+        <field name="name">channel.product.ai.fill.wizard.form</field>
+        <field name="model">channel.product.ai.fill.wizard</field>
+        <field name="arch" type="xml">
+            <form><sheet><group>
+                <field name="channel_ids"/>
+                <field name="fill_barcode"/>
+                <field name="fill_condition"/>
+                <field name="fill_brand"/>
+            </group></sheet></form>
+        </field>
+    </record>
+</odoo>

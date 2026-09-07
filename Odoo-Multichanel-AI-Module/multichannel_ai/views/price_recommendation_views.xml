@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_price_recommendation_tree" model="ir.ui.view">
+        <field name="name">price.recommendation.tree</field>
+        <field name="model">price.recommendation</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="product_id"/>
+                <field name="channel_id"/>
+                <field name="ai_recommended_price"/>
+                <field name="cost_price"/>
+                <field name="gross_profit"/>
+                <field name="gross_margin"/>
+                <field name="status"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_price_recommendation_form" model="ir.ui.view">
+        <field name="name">price.recommendation.form</field>
+        <field name="model">price.recommendation</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Product Info">
+                            <field name="product_id"/>
+                            <field name="channel_id"/>
+                        </group>
+                        <group string="AI Recommendation">
+                            <field name="ai_recommended_price"/>
+                            <field name="recommended_reasoning"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Pricing">
+                            <field name="cost_price"/>
+                            <field name="platform_fee"/>
+                            <field name="payment_fee"/>
+                            <field name="shipping_fee"/>
+                            <field name="vat_amount"/>
+                        </group>
+                        <group string="Calculated">
+                            <field name="gross_profit"/>
+                            <field name="gross_margin"/>
+                            <field name="net_profit"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="status"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_price_recommendation" model="ir.actions.act_window">
+        <field name="name">Price Recommendations</field>
+        <field name="res_model">price.recommendation</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

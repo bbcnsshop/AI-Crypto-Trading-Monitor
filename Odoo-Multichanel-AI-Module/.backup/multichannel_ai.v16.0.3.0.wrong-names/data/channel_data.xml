@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Default Channel Configurations -->
+        <record id="channel_shopee" model="channel.config">
+            <field name="name">Shopee</field>
+            <field name="code">shopee</field>
+            <field name="platform">shopee</field>
+            <field name="api_url">sandbox</field>
+            <field name="active">True</field>
+            <field name="sequence">1</field>
+        </record>
+        
+        <record id="channel_lazada" model="channel.config">
+            <field name="name">Lazada</field>
+            <field name="code">lazada</field>
+            <field name="platform">lazada</field>
+            <field name="api_url">sandbox</field>
+            <field name="active">True</field>
+            <field name="sequence">2</field>
+        </record>
+        
+        <record id="channel_tiktok" model="channel.config">
+            <field name="name">TikTok Shop</field>
+            <field name="code">tiktok</field>
+            <field name="platform">tiktok</field>
+            <field name="api_url">sandbox</field>
+            <field name="active">True</field>
+            <field name="sequence">3</field>
+        </record>
+    </data>
+</odoo>

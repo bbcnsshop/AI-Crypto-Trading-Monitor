@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_profit_calculator_wizard_form" model="ir.ui.view">
+        <field name="name">profit.calculator.wizard.form</field>
+        <field name="model">profit.calculator.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Profit Calculator">
+                <group>
+                    <group string="Input">
+                        <field name="product_id"/>
+                        <field name="channel_id"/>
+                        <field name="selling_price"/>
+                        <field name="cost"/>
+                        <field name="target_margin"/>
+                    </group>
+                </group>
+                <group string="Results">
+                    <field name="price_excl_vat" readonly="1"/>
+                    <field name="vat_collected" readonly="1"/>
+                    <field name="platform_fee" readonly="1"/>
+                    <field name="payment_fee" readonly="1"/>
+                    <field name="shipping_subsidy" readonly="1"/>
+                    <field name="total_fees" readonly="1"/>
+                    <field name="gross_profit" readonly="1"/>
+                    <field name="net_profit" readonly="1"/>
+                    <field name="gross_margin" readonly="1"/>
+                    <field name="net_margin" readonly="1"/>
+                    <field name="break_even_price" readonly="1"/>
+                    <field name="recommended_price" readonly="1"/>
+                </group>
+                <footer>
+                    <button string="Close" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_profit_calculator_wizard" model="ir.actions.act_window">
+        <field name="name">Profit Calculator</field>
+        <field name="res_model">profit.calculator.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

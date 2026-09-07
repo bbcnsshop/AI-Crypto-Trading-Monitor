@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_category_mapping_tree" model="ir.ui.view">
+        <field name="name">product.category.mapping.tree</field>
+        <field name="model">product.category.mapping</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="channel_category_name"/>
+                <field name="odoo_category_id"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_product_category_mapping_form" model="ir.ui.view">
+        <field name="name">product.category.mapping.form</field>
+        <field name="model">product.category.mapping</field>
+        <field name="arch" type="xml">
+            <form><sheet><group>
+                <field name="channel_category_name"/>
+                <field name="odoo_category_id"/>
+            </group></sheet></form>
+        </field>
+    </record>
+    <record id="action_category_mapping" model="ir.actions.act_window">
+        <field name="name">Category Mappings</field>
+        <field name="res_model">product.category.mapping</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

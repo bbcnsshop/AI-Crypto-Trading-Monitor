@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_channel_list_module_tree" model="ir.ui.view">
+        <field name="name">channel.list.module.tree</field>
+        <field name="model">channel.list.module</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_channel_list_module_form" model="ir.ui.view">
+        <field name="name">channel.list.module.form</field>
+        <field name="model">channel.list.module</field>
+        <field name="arch" type="xml">
+            <form><sheet><group>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="active"/>
+            </group></sheet></form>
+        </field>
+    </record>
+    <record id="action_channel_list_module" model="ir.actions.act_window">
+        <field name="name">Channel List Modules</field>
+        <field name="res_model">channel.list.module</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

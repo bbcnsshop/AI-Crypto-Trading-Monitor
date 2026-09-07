@@ -1,0 +1,50 @@
+# Byte-compiled / optimized / stripped binaries
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment variables
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Odoo Reference (local only, not for deployment)
+odoo-16-reference/
+
+# Temporary files
+tmp/
+temp/
+
+# Odoo specific
+*.ovh
+*.csv
+
+# AI Assistant files (local only - ไม่ commit)
+AI_PROFILE.md
+PROGRESS.md
+CHANGELOG.md
+.clinerules
+.cursorrules
+.aider*
+.roo/
+global-rules/
+*.local.md

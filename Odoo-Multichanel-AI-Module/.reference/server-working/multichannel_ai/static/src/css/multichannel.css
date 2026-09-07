@@ -1,0 +1,65 @@
+/* Multi-Channel E-Commerce Module Styles */
+
+.o_multichannel_dashboard {
+    padding: 20px;
+}
+
+.o_multichannel_card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #fff;
+}
+
+.o_multichannel_card.o_shopee {
+    border-left: 4px solid #EE4D2D;
+}
+
+.o_multichannel_card.o_lazada {
+    border-left: 4px solid #0F1471;
+}
+
+.o_multichannel_card.o_tiktok {
+    border-left: 4px solid #00f2ea;
+}
+
+.o_multichannel_stat {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.o_multichannel_stat_label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.o_multichannel_profit_high {
+    color: #28a745;
+}
+
+.o_multichannel_profit_medium {
+    color: #ffc107;
+}
+
+.o_multichannel_profit_low {
+    color: #dc3545;
+}
+
+/* Channel Status Colors */
+.o_channel_status_synced {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.o_channel_status_pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.o_channel_status_error {
+    background-color: #f8d7da;
+    color: #721c24;
+}

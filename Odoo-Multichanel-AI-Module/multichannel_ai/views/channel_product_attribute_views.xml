@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_channel_product_attribute_tree" model="ir.ui.view">
+        <field name="name">channel.product.attribute.tree</field>
+        <field name="model">channel.product.attribute</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="display_name"/>
+                <field name="channel_id"/>
+                <field name="odoo_attribute_id"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_channel_product_attribute_form" model="ir.ui.view">
+        <field name="name">channel.product.attribute.form</field>
+        <field name="model">channel.product.attribute</field>
+        <field name="arch" type="xml">
+            <form><sheet><group>
+                <field name="channel_id"/>
+                <field name="odoo_attribute_id"/>
+                <field name="odoo_value_id"/>
+                <field name="platform_attr_name"/>
+                <field name="platform_attr_value"/>
+            </group></sheet></form>
+        </field>
+    </record>
+    <record id="action_channel_product_attribute" model="ir.actions.act_window">
+        <field name="name">Product Attributes</field>
+        <field name="res_model">channel.product.attribute</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

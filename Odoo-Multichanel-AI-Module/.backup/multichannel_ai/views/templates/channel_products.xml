@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="multichannel_products" name="Channel Products">
+        <t t-call="multichannel_ai.multichannel_layout">
+            <div class="o_portal_content">
+                <h1>Channel Products</h1>
+            </div>
+        </t>
+    </template>
+</odoo>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Channel status on product.product (standalone view, not inheriting) -->
+    <record id="view_product_product_form_channel" model="ir.ui.view">
+        <field name="name">product.product.form.channel</field>
+        <field name="model">product.product</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <group string="Channel Status">
+                        <field name="is_on_shopee"/>
+                        <field name="is_on_lazada"/>
+                        <field name="is_on_tiktok"/>
+                    </group>
+                </group>
+            </form>
+        </field>
+    </record>
+</odoo>

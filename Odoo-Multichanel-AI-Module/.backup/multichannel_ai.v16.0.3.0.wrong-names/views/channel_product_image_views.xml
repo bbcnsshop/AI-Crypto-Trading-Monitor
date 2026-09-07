@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_channel_product_image_tree" model="ir.ui.view">
+        <field name="name">channel.product.image.tree</field>
+        <field name="model">channel.product.image</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="channel_product_id"/>
+                <field name="sequence"/>
+                <field name="is_primary"/>
+                <field name="image_type"/>
+                <field name="alt_text"/>
+                <field name="source_type"/>
+                <field name="upload_status"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_channel_product_image_form" model="ir.ui.view">
+        <field name="name">channel.product.image.form</field>
+        <field name="model">channel.product.image</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Product">
+                            <field name="channel_product_id"/>
+                            <field name="sequence"/>
+                            <field name="is_primary"/>
+                        </group>
+                        <group string="Image Source">
+                            <field name="source_type"/>
+                            <field name="odoo_image_field"/>
+                            <field name="image_url"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Image Details">
+                            <field name="image_type"/>
+                            <field name="alt_text"/>
+                        </group>
+                        <group string="Upload Status">
+                            <field name="upload_status"/>
+                            <field name="upload_message"/>
+                            <field name="last_upload"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Platform Image IDs">
+                            <field name="shopee_image_id"/>
+                            <field name="lazada_image_id"/>
+                            <field name="tiktok_image_id"/>
+                        </group>
+                        <group string="Metadata">
+                            <field name="width"/>
+                            <field name="height"/>
+                            <field name="file_size"/>
+                            <field name="checksum"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_channel_product_image" model="ir.actions.act_window">
+        <field name="name">Channel Product Images</field>
+        <field name="res_model">channel.product.image</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

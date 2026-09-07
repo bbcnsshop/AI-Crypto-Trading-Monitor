@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="multichannel_layout" name="Multichannel Layout">
+        <t t-call="web.layout">
+            <t t-set="head">
+                <t t-call-assets="web.assets_common"/>
+                <t t-call-assets="web.assets_backend"/>
+            </t>
+            <t t-raw="0"/>
+        </t>
+    </template>
+</odoo>

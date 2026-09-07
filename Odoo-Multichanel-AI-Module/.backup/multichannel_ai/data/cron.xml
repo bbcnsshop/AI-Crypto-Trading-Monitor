@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Auto Sync: Sync pending products every 30 minutes -->
+        <record id="cron_channel_auto_sync" model="ir.cron">
+            <field name="name">Multi-Channel: Auto Sync Products</field>
+            <field name="model_id" ref="model_channel_product"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_sync_pending_products()</field>
+            <field name="interval_number">30</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="doall">0</field>
+            <field name="active" eval="False"/>
+        </record>
+
+        <!-- Auto Sync: Check channel stock every hour -->
+        <record id="cron_channel_stock_sync" model="ir.cron">
+            <field name="name">Multi-Channel: Auto Sync Stock</field>
+            <field name="model_id" ref="model_channel_product"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_sync_channel_stock()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">-1</field>
+            <field name="doall">0</field>
+            <field name="active" eval="False"/>
+        </record>
+
+        <!-- Auto Fetch: Get orders from channels every 15 minutes -->
+        <record id="cron_channel_fetch_orders" model="ir.cron">
+            <field name="name">Multi-Channel: Fetch Channel Orders</field>
+            <field name="model_id" ref="model_channel_order"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_import_orders()</field>
+            <field name="interval_number">15</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="doall">0</field>
+            <field name="active" eval="False"/>
+        </record>
+
+        <!-- Auto Sync Stock: Sync Odoo stock to platforms every hour -->
+        <record id="cron_channel_sync_stock" model="ir.cron">
+            <field name="name">Multi-Channel: Sync Stock to Platforms</field>
+            <field name="model_id" ref="model_channel_order"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_sync_stock()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">-1</field>
+            <field name="doall">0</field>
+            <field name="active" eval="False"/>
+        </record>
+
+        <!-- AI Pricing: Refresh AI recommendations daily -->
+        <record id="cron_ai_price_refresh" model="ir.cron">
+            <field name="name">Multi-Channel: AI Price Refresh</field>
+            <field name="model_id" ref="model_channel_product"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_refresh_ai_prices()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="doall">0</field>
+            <field name="active" eval="False"/>
+        </record>
+
+        <!-- Completeness Check: Daily at 6 AM -->
+        <record id="cron_completeness_check" model="ir.cron">
+            <field name="name">Multi-Channel: Check Product Completeness</field>
+            <field name="model_id" ref="model_channel_product"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_check_completeness()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="doall">0</field>
+            <field name="active" eval="False"/>
+        </record>
+
+        <!-- Sync Error Alert: Daily at 9 AM -->
+        <record id="cron_sync_error_alert" model="ir.cron">
+            <field name="name">Multi-Channel: Sync Error Alert</field>
+            <field name="model_id" ref="model_channel_product"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_sync_error_alert()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="doall">0</field>
+            <field name="active" eval="False"/>
+        </record>
+    </data>
+</odoo>

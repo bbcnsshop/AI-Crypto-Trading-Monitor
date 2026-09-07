@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Default Category Mappings (sample) -->
+        <record id="cat_mapping_laptop" model="ai.category.mapping">
+            <field name="product_name">Laptop</field>
+            <field name="category_id" ref="product.product_category_all"/>
+            <field name="confidence">0.9</field>
+        </record>
+        <record id="cat_mapping_printer" model="ai.category.mapping">
+            <field name="product_name">Printer</field>
+            <field name="category_id" ref="product.product_category_all"/>
+            <field name="confidence">0.9</field>
+        </record>
+    </data>
+</odoo>

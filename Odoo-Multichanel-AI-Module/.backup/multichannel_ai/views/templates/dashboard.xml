@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="multichannel_dashboard" name="Multichannel Dashboard">
+        <t t-call="multichannel_ai.multichannel_layout">
+            <div class="o_portal_content">
+                <h1>Multi-Channel Dashboard</h1>
+                <p>Welcome to Multi-Channel E-Commerce</p>
+            </div>
+        </t>
+    </template>
+</odoo>
