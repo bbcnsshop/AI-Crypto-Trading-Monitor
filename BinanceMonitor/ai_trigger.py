@@ -125,9 +125,10 @@ def check_smart_trigger(data, df) -> tuple:
     # 6. Big Move
     if TRIGGER_BIG_MOVE and len(df) >= 2:
         prev_close = df['close'].iloc[-2]
-        change = abs(close - prev_close) / prev_close * 100
-        if change > BIG_MOVE_PCT:
-            reasons.append(f"Big Move ({change:.2f}% change)")
+        if prev_close > 0:  # Guard against zero/None
+            change = abs(close - prev_close) / prev_close * 100
+            if change > BIG_MOVE_PCT:
+                reasons.append(f"Big Move ({change:.2f}% change)")
     
     should_trigger = len(reasons) > 0
     reason_str = " | ".join(reasons) if reasons else "No trigger"
