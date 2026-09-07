@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`maincli.py`** - `monitor` loop: guard `price_change_pct` ไม่หารด้วย 0 (กรณี df มี 1 candle หรือ prev_close=0)
 - **`main.py`** - `run_analysis()`: เพิ่ม NaN guard สำหรับ RSI progress bar และ `trigger_type or 'OK'` fallback
 - **`maincli.py`** - `backtest` command: แก้ `if not result:` ที่ผิด (empty dict falsy) → ใช้ `if df is None:` แทน เพื่อแยก error vs empty signals
+- **`maincli.py`** - `@cli.command('config')` เพิ่ม name arg ให้ใช้ `python maincli.py config` ได้ (เดิมต้อง `config-cmd`)
 
 #### 🏗️ Bug Fixes (Code Review Round 1)
 - **`indicators.py`** - `find_swing_high_low()`: แก้ logic ให้ track highest/lowest value จริงๆ (ก่อนหน้า return index สุดท้ายที่ผ่านเงื่อนไข)

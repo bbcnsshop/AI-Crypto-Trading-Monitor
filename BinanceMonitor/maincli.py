@@ -368,7 +368,7 @@ def backtest(symbol, timeframe, limit):
     display_rich_ui(data, symbol, timeframe, 'standard')
 
 
-@cli.command()
+@cli.command('config')
 def config_cmd():
     """แสดง Configuration"""
     trigger_settings = {
