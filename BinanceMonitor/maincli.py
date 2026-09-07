@@ -336,9 +336,11 @@ def backtest(symbol, timeframe, limit):
         border_style="green"
     ))
     result, df = run_quick_backtest(symbol, timeframe, limit)
-    if not result:
-        console.print("[red]Backtest ล้มเหลว[/red]")
+    if df is None:
+        console.print("[red]Backtest ล้มเหลว (fetch error)[/red]")
         return
+    if not result:
+        console.print("[yellow]Backtest สำเร็จแต่ไม่มีสัญญาณเทรด (empty data)[/yellow]")
     data = MarketData()
     data.symbol = symbol
     data.timeframe = timeframe
