@@ -54,19 +54,26 @@ class MarketData:
         self.backtest_result = {}
 
 
-def fetch_data(symbol, timeframe, limit=100):
-    import ccxt, pandas as pd
-    try:
-        exchange = ccxt.binance({'enableRateLimit': True})
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
-        df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        return df
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except Exception as e:
-        console.print(f"[red]Error fetching data: {e}[/red]")
-        return None
+def fetch_data(symbol, timeframe, limit=100, max_retries=3, retry_delay=2):
+    import ccxt
+    import pandas as pd
+    import time
+    for attempt in range(1, max_retries + 1):
+        try:
+            exchange = ccxt.binance({'enableRateLimit': True})
+            ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+            df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            return df
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            if attempt < max_retries:
+                console.print(f"[yellow]⚠ Fetch attempt {attempt}/{max_retries} failed: {e}. Retrying in {retry_delay}s...[/yellow]")
+                time.sleep(retry_delay)
+            else:
+                console.print(f"[red]Error fetching data after {max_retries} attempts: {e}[/red]")
+                return None
 
 
 def run_quick_backtest(symbol, timeframe, candles=100):
@@ -143,7 +150,7 @@ def analyze_market(symbol, timeframe):
         cooldown_tracker.record_send()
     else:
         data.ai_analysis = f"[AI Skipped: {reason}]"
-    data.backtest_result = run_quick_backtest(symbol, timeframe, 100)
+    data.backtest_result = run_quick_backtest(symbol, timeframe, CANDLE_LIMIT)
     return data
 
 
@@ -232,19 +239,29 @@ def monitor(symbol, timeframe, interval, mode, max_runs, once):
                 if hasattr(val, 'iloc') and len(val) > 0:
                     return float(val.iloc[-1])
                 return float(val) if val != 0 else 0.0
-            data.rsi = get_val('rsi')
-            data.macd_hist = get_val('macd_hist')
-            data.atr = get_val('atr')
-            data.ema_20 = get_val('ema_20')
+            # เซ็ต data.indicators dict ที่ check_trigger ต้องการ
+            data.indicators = {
+                'rsi': get_val('rsi'),
+                'macd_line': get_val('macd_line'),
+                'macd_signal': get_val('macd_signal'),
+                'macd_hist': get_val('macd_hist'),
+                'atr': get_val('atr'),
+                'ema20': get_val('ema20'),
+            }
+            # เก็บเป็น flat fields เพื่อ monitor display
+            data.rsi = data.indicators['rsi']
+            data.macd_hist = data.indicators['macd_hist']
+            data.atr = data.indicators['atr']
+            data.ema_20 = data.indicators['ema20']
 
             sh, sl, _, _ = find_swing_high_low(df, SWING_LOOKBACK)
             data.fibonacci = calculate_fibonacci_levels(sh, sl)
             data.vpvr = calculate_vpvr(df, VPVR_BINS)
 
-            # ตรวจ patterns
-            patterns = detect_candlestick_patterns(df)
-            bullish_count = sum(1 for p in patterns.values() if p and 'Bullish' in str(p) or p == 'Hammer' or p == 'Bullish Engulfing')
-            bearish_count = sum(1 for p in patterns.values() if p and 'Bearish' in str(p))
+            # ตรวจ patterns (data.patterns dict ที่ check_trigger ต้องการ)
+            data.patterns = detect_candlestick_patterns(df)
+            bullish_count = sum(1 for k, v in data.patterns.items() if v and 'bull' in k.lower())
+            bearish_count = sum(1 for k, v in data.patterns.items() if v and 'bear' in k.lower())
             data.bullish_patterns = bullish_count
             data.bearish_patterns = bearish_count
 

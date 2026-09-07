@@ -214,7 +214,7 @@ def run_analysis():
                 progress.update(main_task, advance=1, detail="Skipped")
 
             progress.update(main_task, advance=1, detail="Rendering...")
-            data.backtest_result = run_quick_backtest(SYMBOL, TIMEFRAME, candles=100)
+            data.backtest_result = run_quick_backtest(SYMBOL, TIMEFRAME, candles=CANDLE_LIMIT)
             progress.update(main_task, advance=1, detail="[green]✓ เสร็จสิ้น[/green]")
 
         # แสดงผลหลัง progress เสร็จ
