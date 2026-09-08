@@ -5,9 +5,20 @@ Configuration Module for AI Crypto Trading Monitor
 """
 
 import os
+import ccxt
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Shared CCXT exchange instance to avoid recreating on every fetch
+_exchange_instance = None
+
+def get_exchange():
+    """Get or create shared CCXT exchange instance"""
+    global _exchange_instance
+    if _exchange_instance is None:
+        _exchange_instance = ccxt.binance({'enableRateLimit': True})
+    return _exchange_instance
 
 # ============================================================
 # Version

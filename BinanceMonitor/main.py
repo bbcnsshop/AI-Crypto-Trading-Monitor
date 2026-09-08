@@ -25,7 +25,7 @@ from config import (
     AI_COOLDOWN_MAX_PER_HOUR, TRIGGER_RSI_EXTREME, TRIGGER_PATTERN,
     TRIGGER_MACD_CROSS, TRIGGER_NEAR_LEVEL, TRIGGER_HIGH_VOLATILITY,
     TRIGGER_BIG_MOVE, SCHEDULE_INTERVAL_MINUTES, AI_COOLDOWN_SECONDS,
-    AI_TRIGGER_MODE, VERSION
+    AI_TRIGGER_MODE, VERSION, get_exchange,
 )
 from indicators import calculate_indicators, calculate_fibonacci_levels, calculate_vpvr, find_swing_high_low
 from ai_trigger import CooldownTracker, check_trigger
@@ -172,7 +172,7 @@ def run_analysis():
         ) as progress:
             main_task = progress.add_task("[bold cyan]📊 กำลังวิเคราะห์[/bold cyan]", total=7, detail="เริ่มต้น...")
 
-            exchange = ccxt.binance()
+            exchange = get_exchange()
             ohlcv = exchange.fetch_ohlcv(SYMBOL, TIMEFRAME, limit=CANDLE_LIMIT)
             df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')

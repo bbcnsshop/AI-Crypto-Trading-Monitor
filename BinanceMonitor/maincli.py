@@ -36,6 +36,7 @@ from config import (
     DISPLAY_MODE, AI_TRIGGER_MODE, TRIGGER_RSI_EXTREME, TRIGGER_PATTERN,
     TRIGGER_MACD_CROSS, TRIGGER_NEAR_LEVEL, TRIGGER_HIGH_VOLATILITY,
     TRIGGER_BIG_MOVE, AI_COOLDOWN_MAX_PER_HOUR, AI_COOLDOWN_SECONDS,
+    get_exchange,
 )
 from indicators import calculate_indicators, calculate_fibonacci_levels, calculate_vpvr, find_swing_high_low
 from ai_trigger import CooldownTracker, check_trigger
@@ -55,12 +56,11 @@ class MarketData:
 
 
 def fetch_data(symbol, timeframe, limit=100, max_retries=3, retry_delay=2):
-    import ccxt
     import pandas as pd
     import time
     for attempt in range(1, max_retries + 1):
         try:
-            exchange = ccxt.binance({'enableRateLimit': True})
+            exchange = get_exchange()
             ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
             df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
@@ -76,22 +76,29 @@ def fetch_data(symbol, timeframe, limit=100, max_retries=3, retry_delay=2):
                 return None
 
 
-def run_quick_backtest(symbol, timeframe, candles=100):
-    """Returns (result_dict, df) tuple or ({}, None) on error"""
+def run_quick_backtest(symbol, timeframe, candles=100, df=None):
+    """Returns (result_dict, df) tuple or ({}, None) on error.
+    If df is provided, use it instead of fetching new data.
+    """
     from ta.momentum import RSIIndicator
     from ta.trend import MACD, EMAIndicator
     from ta.volatility import AverageTrueRange
-    df = fetch_data(symbol, timeframe, candles)
-    if df is None:
-        return {}, None
     try:
-        df['rsi'] = RSIIndicator(close=df['close'], window=14).rsi()
-        macd = MACD(close=df['close'])
-        df['macd_hist'] = macd.macd_diff()
-        df['macd_line'] = macd.macd()
-        df['macd_signal'] = macd.macd_signal()
-        df['atr'] = AverageTrueRange(high=df['high'], low=df['low'], close=df['close']).average_true_range()
-        df['ema20'] = EMAIndicator(close=df['close'], window=20, fillna=False).ema_indicator()
+        if df is None:
+            df = fetch_data(symbol, timeframe, candles)
+        if df is None:
+            return {}, None
+        # Skip recalculating indicators if already present (analyze_market provides pre-calculated df)
+        needs_calc = not all(col in df.columns for col in ['rsi', 'macd_hist', 'atr', 'ema20'])
+        if needs_calc:
+            df['rsi'] = RSIIndicator(close=df['close'], window=14).rsi()
+            macd = MACD(close=df['close'])
+            df['macd_hist'] = macd.macd_diff()
+            df['macd_line'] = macd.macd()
+            df['macd_signal'] = macd.macd_signal()
+            df['atr'] = AverageTrueRange(high=df['high'], low=df['low'], close=df['close']).average_true_range()
+            df['ema20'] = EMAIndicator(close=df['close'], window=20, fillna=False).ema_indicator()
+
         signals = []
         for i in range(20, len(df) - 5):
             rsi = df['rsi'].iloc[i]
@@ -111,6 +118,7 @@ def run_quick_backtest(symbol, timeframe, candles=100):
                 signals.append({'type': 'LONG', 'won': won})
             elif rsi > 60 and macd_h < 0:
                 signals.append({'type': 'SHORT', 'won': won})
+
         if not signals:
             return ({'winrate': 0, 'total_trades': 0, 'profit_factor': 0, 'total_pnl': 0,
                     'period': f"{df['timestamp'].iloc[0].date()} -> {df['timestamp'].iloc[-1].date()}"}, df)
@@ -155,7 +163,7 @@ def analyze_market(symbol, timeframe):
         cooldown_tracker.record_send()
     else:
         data.ai_analysis = f"[AI Skipped: {reason}]"
-    backtest_result, _ = run_quick_backtest(symbol, timeframe, CANDLE_LIMIT)
+    backtest_result, _ = run_quick_backtest(symbol, timeframe, CANDLE_LIMIT, df=data)
     data.backtest_result = backtest_result
     return data
 
