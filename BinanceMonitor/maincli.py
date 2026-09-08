@@ -16,6 +16,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich import box
+from functools import lru_cache
 
 # ============================================================
 # Suppress SSL/urllib3 warnings (cross-platform safe)
@@ -56,8 +57,18 @@ class MarketData:
 
 
 def fetch_data(symbol, timeframe, limit=100, max_retries=3, retry_delay=2):
+    """Fetch OHLCV data with LRU cache to avoid duplicate API calls.
+    Cache key: (symbol, timeframe, limit, minute_bucket)
+    """
     import pandas as pd
-    import time
+    ts_bucket = int(time.time() // 60)  # bucket by minute
+    return _fetch_data_cached(symbol, timeframe, limit, max_retries, retry_delay, ts_bucket)
+
+
+@lru_cache(maxsize=32)
+def _fetch_data_cached(symbol, timeframe, limit, max_retries, retry_delay, ts_bucket):
+    """Cached fetch_data implementation."""
+    import pandas as pd
     for attempt in range(1, max_retries + 1):
         try:
             exchange = get_exchange()
@@ -80,6 +91,7 @@ def run_quick_backtest(symbol, timeframe, candles=100, df=None):
     """Returns (result_dict, df) tuple or ({}, None) on error.
     If df is provided, use it instead of fetching new data.
     """
+    import numpy as np
     from ta.momentum import RSIIndicator
     from ta.trend import MACD, EMAIndicator
     from ta.volatility import AverageTrueRange
@@ -99,24 +111,35 @@ def run_quick_backtest(symbol, timeframe, candles=100, df=None):
             df['atr'] = AverageTrueRange(high=df['high'], low=df['low'], close=df['close']).average_true_range()
             df['ema20'] = EMAIndicator(close=df['close'], window=20, fillna=False).ema_indicator()
 
+        # Use numpy arrays for faster loop iteration
+        rsi_arr = df['rsi'].values
+        macd_arr = df['macd_hist'].values
+        atr_arr = df['atr'].values
+        close_arr = df['close'].values
+        high_arr = df['high'].values
+        low_arr = df['low'].values
+
+        n = len(df)
+        if n <= 25:
+            return ({'winrate': 0, 'total_trades': 0, 'profit_factor': 0, 'total_pnl': 0,
+                    'period': f"{df['timestamp'].iloc[0].date()} -> {df['timestamp'].iloc[-1].date()}"}, df)
+
+        # Precompute TP/SL arrays
+        tp = close_arr + atr_arr * 2
+        sl = close_arr - atr_arr
+
         signals = []
-        for i in range(20, len(df) - 5):
-            rsi = df['rsi'].iloc[i]
-            macd_h = df['macd_hist'].iloc[i]
-            atr = df['atr'].iloc[i]
-            close = df['close'].iloc[i]
-            tp = close + (atr * 2)
-            sl = close - atr
+        for i in range(20, n - 5):
             won = False
             for j in range(1, 6):
-                if df['high'].iloc[i + j] >= tp:
+                if high_arr[i + j] >= tp[i]:
                     won = True
                     break
-                if df['low'].iloc[i + j] <= sl:
+                if low_arr[i + j] <= sl[i]:
                     break
-            if rsi < 40 and macd_h > 0:
+            if rsi_arr[i] < 40 and macd_arr[i] > 0:
                 signals.append({'type': 'LONG', 'won': won})
-            elif rsi > 60 and macd_h < 0:
+            elif rsi_arr[i] > 60 and macd_arr[i] < 0:
                 signals.append({'type': 'SHORT', 'won': won})
 
         if not signals:
