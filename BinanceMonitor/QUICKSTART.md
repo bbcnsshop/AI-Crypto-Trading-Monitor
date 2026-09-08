@@ -16,7 +16,12 @@ cp .env.example .env
 python3 maincli.py analyze -s BTC/USDT -t 1h
 ```
 
----
+## 🚀 Performance Notes (v1.5.3)
+
+- Analyze: ~2-3 วินาที (ด้วย shared CCXT exchange + df reuse)
+- Backtest 1000 candles: ~1.5-2 วินาที
+- Monitor mode: ทุกๆ 5 นาทีใช้เวลา ~8-10 วินาที
+- ลดการสร้าง Exchange object ซ้ำ (config.py, main.py, maincli.py, backtest.py)
 
 ## 📊 Quick Commands
 

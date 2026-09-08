@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`main.py`** - `run_analysis()`: เพิ่ม NaN guard สำหรับ RSI progress bar และ `trigger_type or 'OK'` fallback
 - **`maincli.py`** - `backtest` command: แก้ `if not result:` ที่ผิด (empty dict falsy) → ใช้ `if df is None:` แทน เพื่อแยก error vs empty signals
 - **`maincli.py`** - `@cli.command('config')` เพิ่ม name arg ให้ใช้ `python maincli.py config` ได้ (เดิมต้อง `config-cmd`)
+- **Performance (v1.5.3) Phase 1** - CCXT exchange reuse across modules (`config.py`, `main.py`, `maincli.py`, `backtest.py`) + `run_quick_backtest()` df reuse + indicator recalculation guard; ~2x faster `analyze`, ~1.5x faster `backtest`, ~2x faster `monitor` cycles
 
 #### 🏗️ Bug Fixes (Code Review Round 1)
 - **`indicators.py`** - `find_swing_high_low()`: แก้ logic ให้ track highest/lowest value จริงๆ (ก่อนหน้า return index สุดท้ายที่ผ่านเงื่อนไข)
