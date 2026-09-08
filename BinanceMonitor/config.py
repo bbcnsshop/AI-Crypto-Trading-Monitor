@@ -35,7 +35,7 @@ TEST_MODE = True  # True = รัน 1 รอบ, False = รันตามเ�
 # ============================================================
 SYMBOL = "BTC/USDT"
 TIMEFRAME = "1h"
-CANDLE_LIMIT = 100
+CANDLE_LIMIT = 500  # Updated: 500 candles for meaningful backtest results
 SWING_LOOKBACK = 5
 VPVR_BINS = 50
 VALUE_AREA_PCT = 0.70

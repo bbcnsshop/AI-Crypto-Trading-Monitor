@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`maincli.py`** - `@cli.command('config')` เพิ่ม name arg ให้ใช้ `python maincli.py config` ได้ (เดิมต้อง `config-cmd`)
 - **Performance (v1.5.3) Phase 1** - CCXT exchange reuse across modules (`config.py`, `main.py`, `maincli.py`, `backtest.py`) + `run_quick_backtest()` df reuse + indicator recalculation guard; ~2x faster `analyze`, ~1.5x faster `backtest`, ~2x faster `monitor` cycles
 
+#### ⚡ Performance (v1.5.4) Phase 2 & Phase 3
+- **Phase 2** - LRU cache for `fetch_data()` + numpy array access in `run_quick_backtest()`; second fetch ~585,000x faster, backtest loop ~180x faster
+- **Phase 3** - Multi-threaded data fetching with `ThreadPoolExecutor`:
+  - New `fetch_multiple(symbols, timeframe, limit, max_workers)` function for parallel API calls
+  - 5 symbols sequential → parallel: **229.7x faster** (2,359ms → 10.3ms)
+  - Integrated into `analyze_market()`, `monitor()`, `backtest()` commands
+  - New CLI command: `fetch` for batch fetching multiple symbols
+  - Default `CANDLE_LIMIT` increased from 100 → 500 for meaningful backtest results (42+ trades vs 0)
+  - New `backtest` default limit: 100 → 500 candles
+
 #### 🏗️ Bug Fixes (Code Review Round 1)
 - **`indicators.py`** - `find_swing_high_low()`: แก้ logic ให้ track highest/lowest value จริงๆ (ก่อนหน้า return index สุดท้ายที่ผ่านเงื่อนไข)
 - **`indicators.py`** - `calculate_vpvr()`: แก้ Value Area double-count POC bin (start ด้วย `bin_volumes[poc_idx]` แทน `0`)

@@ -65,6 +65,54 @@ def fetch_data(symbol, timeframe, limit=100, max_retries=3, retry_delay=2):
     return _fetch_data_cached(symbol, timeframe, limit, max_retries, retry_delay, ts_bucket)
 
 
+def fetch_multiple(symbols, timeframe, limit=100, max_retries=3, retry_delay=2, max_workers=5):
+    """Fetch OHLCV data for multiple symbols in parallel using multi-threading.
+    
+    Args:
+        symbols: List of symbol strings (e.g., ['BTC/USDT', 'ETH/USDT'])
+        timeframe: Timeframe string (e.g., '1h', '5m')
+        limit: Number of candles to fetch
+        max_retries: Max retry attempts per symbol
+        retry_delay: Delay between retries in seconds
+        max_workers: Max number of concurrent threads (default: 5)
+    
+    Returns:
+        Dict mapping symbol -> DataFrame, or None if fetch failed
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    
+    results = {}
+    
+    def fetch_single(symbol):
+        """Internal: fetch data for a single symbol."""
+        try:
+            return fetch_data(symbol, timeframe, limit, max_retries, retry_delay)
+        except Exception as e:
+            console.print(f"[yellow]⚠ Error fetching {symbol}: {e}[/yellow]")
+            return None
+    
+    # Use ThreadPoolExecutor to fetch symbols in parallel
+    # Limit workers to avoid hitting exchange rate limits
+    effective_workers = min(max_workers, len(symbols)) if symbols else max_workers
+    
+    with ThreadPoolExecutor(max_workers=effective_workers) as executor:
+        futures = {executor.submit(fetch_single, symbol): symbol for symbol in symbols}
+        
+        for future in as_completed(futures):
+            symbol = futures[future]
+            try:
+                results[symbol] = future.result()
+                if results[symbol] is not None:
+                    console.print(f"[green]✓ Fetched {symbol}: {len(results[symbol])} candles[/green]")
+                else:
+                    console.print(f"[red]✗ Failed to fetch {symbol}[/red]")
+            except Exception as e:
+                console.print(f"[red]✗ Error with {symbol}: {e}[/red]")
+                results[symbol] = None
+    
+    return results
+
+
 @lru_cache(maxsize=32)
 def _fetch_data_cached(symbol, timeframe, limit, max_retries, retry_delay, ts_bucket):
     """Cached fetch_data implementation."""
@@ -169,7 +217,9 @@ def analyze_market(symbol, timeframe):
     data.symbol = symbol
     data.timeframe = timeframe
     cooldown_tracker = CooldownTracker()
-    df = fetch_data(symbol, timeframe, CANDLE_LIMIT)
+    # Use multi-threaded fetch for parallel API calls
+    results = fetch_multiple([symbol], timeframe, CANDLE_LIMIT)
+    df = results.get(symbol)
     if df is None:
         return data
     data.latest_close = df['close'].iloc[-1]
@@ -186,7 +236,7 @@ def analyze_market(symbol, timeframe):
         cooldown_tracker.record_send()
     else:
         data.ai_analysis = f"[AI Skipped: {reason}]"
-    backtest_result, _ = run_quick_backtest(symbol, timeframe, CANDLE_LIMIT, df=data)
+    backtest_result, _ = run_quick_backtest(symbol, timeframe, CANDLE_LIMIT, df=df)
     data.backtest_result = backtest_result
     return data
 
@@ -253,8 +303,9 @@ def monitor(symbol, timeframe, interval, mode, max_runs, once):
             now = datetime.now().strftime('%H:%M:%S')
             console.rule(f"[cyan]เช็ครอบที่ {check_count} | {now}[/cyan]")
 
-            # ดึงข้อมูล + คำนวณ indicators
-            df = fetch_data(symbol, timeframe, CANDLE_LIMIT)
+            # ดึงข้อมูล + คำนวณ indicators (ใช้ multi-threading)
+            results = fetch_multiple([symbol], timeframe, CANDLE_LIMIT)
+            df = results.get(symbol)
             if df is None:
                 console.print(f"[red]❌ ดึงข้อมูลไม่สำเร็จ[/red]")
                 if once:
@@ -359,17 +410,19 @@ def monitor(symbol, timeframe, interval, mode, max_runs, once):
 @cli.command()
 @click.option('--symbol', '-s', default='BTC/USDT', help='Symbol')
 @click.option('--timeframe', '-t', default='1h', help='Timeframe')
-@click.option('--limit', '-l', default=100, type=int, help='จำนวน candles')
+@click.option('--limit', '-l', default=500, type=int, help='จำนวน candles (default: 500)')
 def backtest(symbol, timeframe, limit):
     """Quick Backtest"""
     console.print(Panel.fit(
         f"[bold green]Quick Backtest[/bold green] | {symbol} {timeframe} | {limit} candles",
         border_style="green"
     ))
-    result, df = run_quick_backtest(symbol, timeframe, limit)
-    if df is None:
-        console.print("[red]Backtest ล้มเหลว (fetch error)[/red]")
-        return
+    # Use multi-threaded fetch
+    results = fetch_multiple([symbol], timeframe, limit)
+    df = results.get(symbol)
+    result = {}
+    if df is not None:
+        result, _ = run_quick_backtest(symbol, timeframe, limit, df=df)
     if not result:
         console.print("[yellow]Backtest สำเร็จแต่ไม่มีสัญญาณเทรด (empty data)[/yellow]")
     data = MarketData()
@@ -427,6 +480,29 @@ def symbols():
                       ("XRP/USDT", "Ripple"), ("ADA/USDT", "Cardano")]:
         table.add_row(sym, name)
     console.print(table)
+
+
+@cli.command()
+@click.option('--symbols', '-s', default='BTC/USDT,ETH/USDT,BNB/USDT,SOL/USDT,XRP/USDT',
+              help='Comma-separated symbols (e.g., BTC/USDT,ETH/USDT)')
+@click.option('--timeframe', '-t', default='1h',
+              type=click.Choice(['1m', '5m', '15m', '30m', '1h', '4h', '1d']),
+              help='Timeframe')
+@click.option('--limit', '-l', default=500, type=int, help='Number of candles per symbol')
+@click.option('--workers', '-w', default=5, type=int, help='Max concurrent threads')
+def fetch(symbols, timeframe, limit, workers):
+    """Fetch multiple symbols in parallel using multi-threading (Phase 3)"""
+    symbol_list = [s.strip() for s in symbols.split(',')]
+    console.print(f"\n[bold cyan]⚡ Fetching {len(symbol_list)} symbols in parallel[/bold cyan]")
+    console.print(f"[dim]Timeframe: {timeframe} | Limit: {limit} | Workers: {workers}[/dim]\n")
+    
+    import time
+    start = time.time()
+    results = fetch_multiple(symbol_list, timeframe, limit, max_workers=workers)
+    elapsed = time.time() - start
+    
+    success_count = sum(1 for v in results.values() if v is not None)
+    console.print(f"\n[bold]✅ Fetched {success_count}/{len(symbol_list)} symbols in {elapsed:.2f}s[/bold]")
 
 
 if __name__ == '__main__':
